@@ -1,12 +1,20 @@
 
 # Buildings
-Assembler builds at 1.25
-Chemical plant builds at 1.25
-Furnace builds at 2
-Rocket silo builds at 1
+Assembler builds at 1.25 with 4 modules
+Chemical plant builds at 1.25 with 3 modules
+Furnace builds at 2 with 2 modules
+Rocket silo builds at 1 with 4 modules
 # This 'launch' building represents that the act of launching a rocket converts rockets to white science.
 # Its speed value is meaningless.
 Launch builds at 1
+
+# Modules. Note the short names for easier typing on cli.
+speed 1 module affects speed .2
+speed 1 module affects speed .3
+speed 1 module affects speed .5
+prod 1 module affects speed -.15, prod .04
+prod 1 module affects speed -.15, prod .06
+prod 1 module affects speed -.15, prod .1
 
 # Special 'items' that aren't really items
 # A rocket could be represented by 100 rocket parts, but that doesn't really capture
@@ -14,42 +22,42 @@ Launch builds at 1
 # can't build more rocket parts. So we represent rocket as one entire launch including launch time.
 # Online sources tell me launch time is ~41 seconds. So total time = 3s * 100 parts + 41s = 341s.
 # This will break once modules are taken into account.
-Rocket takes 341 in rocket silo, 1000 low density structure, 1000 rocket control unit, 1000 rocket fuel
+Rocket takes 341 in rocket silo, 1000 low density structure, 1000 rocket control unit, 1000 rocket fuel, can take productivity
 
 # Intermediate Products
 # Omitted: petroleum, light oil, heavy oil, all uranium products
-Green circuit takes 0.5 in assembler, 1 iron plate, 3 copper wire
-Red circuit takes 6 in assembler, 4 copper wire, 2 green circuit, 2 plastic
-Blue circuit takes 10 in assembler, 2 red circuit, 20 green circuit, 5 sulfuric acid
-Battery takes 5 in chemical plant, 1 copper plate, 1 iron plate, 20 sulfuric acid
-Copper plate takes 3.5 in furnace, 1 copper ore
-2 Copper wire takes 0.5 in assembler, 1 copper plate
-Electric engine takes 10 in assembler, 2 green circuit, 1 engine, 15 lubricant
-Engine takes 10 in assembler, 1 gear, 2 pipe, 1 steel plate
-Explosives takes 5 in chemical plant, 1 coal, 1 sulfur, 10 water
-Robot frame takes 20 in assembler, 2 battery, 1 electric engine, 3 green circuit, 1 steel plate
-Gear takes 0.5 in assembler, 2 iron plate
-Iron plate takes 3.5 in furnace, 1 iron ore
-2 Iron Stick takes 0.5 in assembler, 1 iron plate
-Low density structure takes 30 in assembler, 5 copper plate, 5 plastic, 10 steel plate
-10 lubricant takes 1 in chemical plant, 10 heavy oil
-2 plastic takes 1 in chemical plant, 1 coal, 20 petroleum
-Rocket control unit takes 30 in assembler, 1 blue circuit, 1 speed module
-Rocket fuel takes 30 in assembler, 10 solid fuel
-Satellite takes 3 in assembler, 100 accumulators, 100 low density structure, 100 blue circuit, 5 radar, 50 rocket fuel, 100 solar panel
-Solid fuel takes 3 in chemical plant, 10 light oil
-Steel plate takes 17.5 in furnace, 5 iron plate
-2 sulfur takes 1 in chemical plant, 30 petroleum, 30 water
-50 sulfuric acid takes 1 in chemical plant, 1 iron plate, 5 sulfur, 100 water
-2 wood takes 0.5 in assembler, 1 raw wood
+Green circuit takes 0.5 in assembler, 1 iron plate, 3 copper wire, can take productivity
+Red circuit takes 6 in assembler, 4 copper wire, 2 green circuit, 2 plastic, can take productivity
+Blue circuit takes 10 in assembler, 2 red circuit, 20 green circuit, 5 sulfuric acid, can take productivity
+Battery takes 5 in chemical plant, 1 copper plate, 1 iron plate, 20 sulfuric acid, can take productivity
+Copper plate takes 3.5 in furnace, 1 copper ore, can take productivity
+2 Copper wire takes 0.5 in assembler, 1 copper plate, can take productivity
+Electric engine takes 10 in assembler, 2 green circuit, 1 engine, 15 lubricant, can take productivity
+Engine takes 10 in assembler, 1 gear, 2 pipe, 1 steel plate, can take productivity
+Explosives takes 5 in chemical plant, 1 coal, 1 sulfur, 10 water, can take productivity
+Robot frame takes 20 in assembler, 2 battery, 1 electric engine, 3 green circuit, 1 steel plate, can take productivity
+Gear takes 0.5 in assembler, 2 iron plate, can take productivity
+Iron plate takes 3.5 in furnace, 1 iron ore, can take productivity
+2 Iron Stick takes 0.5 in assembler, 1 iron plate, can take productivity
+Low density structure takes 30 in assembler, 5 copper plate, 5 plastic, 10 steel plate, can take productivity
+10 lubricant takes 1 in chemical plant, 10 heavy oil, can take productivity
+2 plastic takes 1 in chemical plant, 1 coal, 20 petroleum, can take productivity
+Rocket control unit takes 30 in assembler, 1 blue circuit, 1 speed module, can take productivity
+Rocket fuel takes 30 in assembler, 10 solid fuel, can take productivity
+Satellite takes 3 in assembler, 100 accumulators, 100 low density structure, 100 blue circuit, 5 radar, 50 rocket fuel, 100 solar panel, can take productivity
+Solid fuel takes 3 in chemical plant, 10 light oil, can take productivity
+Steel plate takes 17.5 in furnace, 5 iron plate, can take productivity
+2 sulfur takes 1 in chemical plant, 30 petroleum, 30 water, can take productivity
+50 sulfuric acid takes 1 in chemical plant, 1 iron plate, 5 sulfur, 100 water, can take productivity
+2 wood takes 0.5 in assembler, 1 raw wood, can take productivity
 
 # Science packs
-1 red science takes 5 in assembler, 1 copper plate, 1 gear
-1 green science takes 6 in assembler, 1 inserter, 1 yellow belt
-1 blue science takes 12 in assembler, 1 red circuit, 1 electric mining drill, 1 engine
-2 black science takes 10 in assembler, 1 grenade, 1 gun turret, 1 piercing ammo
-2 purple science takes 14 in assembler, 1 assembly machine, 1 electric engine, 1 electric furnace
-2 yellow science takes 14 in assembler, 1 battery, 30 copper wire, 3 blue circuit, 1 speed module
+1 red science takes 5 in assembler, 1 copper plate, 1 gear, can take productivity
+1 green science takes 6 in assembler, 1 inserter, 1 yellow belt, can take productivity
+1 blue science takes 12 in assembler, 1 red circuit, 1 electric mining drill, 1 engine, can take productivity
+2 black science takes 10 in assembler, 1 grenade, 1 gun turret, 1 piercing ammo, can take productivity
+2 purple science takes 14 in assembler, 1 assembly machine, 1 electric engine, 1 electric furnace, can take productivity
+2 yellow science takes 14 in assembler, 1 battery, 30 copper wire, 3 blue circuit, 1 speed module, can take productivity
 # We model white science as coming from a rocket + a sattelite. Since it has no actual 'build time'
 # we set it to a very low number so it will be pretty much always ignored.
 1000 white science takes 0.001 in launch, 1 rocket, 1 satellite
