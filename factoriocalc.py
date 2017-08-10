@@ -155,7 +155,7 @@ def merge_into(a, b):
 		a[k] = a.get(k, 0) + v
 
 
-def main(item, rate, datafile='factorio_recipes', modules=''):
+def main(item, rate, datafile='factorio_recipes', modules='', fractional=False):
 	"""Calculate ratios and output number of production facilities needed
 	to craft a specific output at a specific rate in Factorio.
 	Requires a data file specifying available recipies and buildings. See source for syntax.
@@ -185,7 +185,7 @@ def main(item, rate, datafile='factorio_recipes', modules=''):
 					Counter(mods).items(), key=lambda (name, count): (count, name)
 				)
 			)) if mods else ''
-			print '{} {}{} producing {}'.format(int(math.ceil(amount)), building, mods_str, item)
+			print '{} {}{} producing {}'.format((int(math.ceil(amount)) if not fractional else '{:.2f}'.format(float(amount))), building, mods_str, item)
 		else:
 			print '{:.2f}/sec of {}'.format(float(amount), item)
 
