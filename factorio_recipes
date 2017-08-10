@@ -10,11 +10,11 @@ Launch builds at 1
 
 # Modules. Note the short names for easier typing on cli.
 speed 1 module affects speed .2
-speed 1 module affects speed .3
-speed 1 module affects speed .5
+speed 2 module affects speed .3
+speed 3 module affects speed .5
 prod 1 module affects speed -.15, prod .04
-prod 1 module affects speed -.15, prod .06
-prod 1 module affects speed -.15, prod .1
+prod 2 module affects speed -.15, prod .06
+prod 3 module affects speed -.15, prod .1
 
 # Special 'items' that aren't really items
 # A rocket could be represented by 100 rocket parts, but that doesn't really capture

@@ -3,13 +3,14 @@ import math
 import re
 import sys
 from collections import OrderedDict, Counter
+from pprint import pprint
 
 # We use ceil() at the end of calculations, and don't want floating point error
 # to make us slightly over an integer and cause us to add another for no reason.
 from fractions import Fraction
 
 
-def get_recipes(datafile, module_priorities):
+def get_recipes(datafile, module_priorities, verbose=False):
 	"""Data file consists of one entry per line. Each entry is either a recipe, building or module.
 	Building lines look like:
 		BUILDING builds at SPEED[ with N modules]
@@ -69,6 +70,8 @@ def get_recipes(datafile, module_priorities):
 							input_amount, input_name = part.split(' ', 1)
 							input_amount = int(input_amount)
 							inputs[input_name] = input_amount
+					if name in items:
+						raise ValueError('Recipe for {!r} already declared'.format(name))
 					items[name] = amount, time, building, inputs, prod
 					continue
 
@@ -78,6 +81,8 @@ def get_recipes(datafile, module_priorities):
 					speed = Fraction(speed)
 					prod = Fraction(prod) if prod else 0
 					name = name.lower()
+					if name in modules:
+						raise ValueError('Module {!r} already declared'.format(name))
 					modules[name] = speed, prod
 					continue
 
@@ -101,6 +106,9 @@ def get_recipes(datafile, module_priorities):
 		throughput = speed * amount / time
 		inputs = {input_name: Fraction(input_amount) / amount for input_name, input_amount in inputs.items()}
 		results[item] = building, throughput, inputs, mods
+
+	if verbose:
+		pprint(results)
 
 	return results
 
@@ -155,7 +163,7 @@ def merge_into(a, b):
 		a[k] = a.get(k, 0) + v
 
 
-def main(item, rate, datafile='factorio_recipes', modules='', fractional=False):
+def main(item, rate, datafile='factorio_recipes', modules='', fractional=False, verbose=False):
 	"""Calculate ratios and output number of production facilities needed
 	to craft a specific output at a specific rate in Factorio.
 	Requires a data file specifying available recipies and buildings. See source for syntax.
@@ -173,7 +181,7 @@ def main(item, rate, datafile='factorio_recipes', modules='', fractional=False):
 		- No dependency cycles (eg. coal liquification, Kovarex enrichment)
 	"""
 	modules = [name.strip().lower() for name in modules.split(',')] if modules else []
-	recipes = get_recipes(datafile, modules)
+	recipes = get_recipes(datafile, modules, verbose)
 	rate = Fraction(rate)
 	results = solve(recipes, item, rate)
 	for item, amount in results.items():
