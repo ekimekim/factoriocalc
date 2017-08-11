@@ -61,3 +61,60 @@ Steel plate takes 17.5 in furnace, 5 iron plate, can take productivity
 # We model white science as coming from a rocket + a sattelite. Since it has no actual 'build time'
 # we set it to a very low number so it will be pretty much always ignored.
 1000 white science takes 0.001 in launch, 1 rocket, 1 satellite
+
+# Logistics
+Wooden chest takes 0.5 in assembler, 4 wood
+Iron chest takes 0.5 in assembler, 8 iron plate
+Steel chest takes 0.5 in assembler, 8 steel plate
+Storage tank takes 3 in assembler, 20 iron plate, 5 steel plate
+2 Yellow belt takes 0.5 in assembler, 1 gear, 1 iron plate
+Red belt takes 0.5 in assembler, 5 gear, 1 yellow belt
+Blue belt takes 0.5 in assembler, 1 red belt, 10 gear, 20 lubricant
+2 yellow underground belt takes 1 in assembler, 10 iron plate, 5 yellow belt
+2 red underground belt takes 0.5 in assembler, 40 gear, 2 yellow underground belt
+2 blue underground belt takes 0.5 in assembler, 2 red underground belt, 80 gear, 40 lubricant
+yellow splitter takes 1 in assembler, 5 green circuit, 5 iron plate, 4 yellow belt
+red splitter takes 2 in assembler, 10 green circuit, 10 gear, 1 yellow splitter
+blue splitter takes 2 in assembler, 10 red circuit, 1 red splitter, 10 gear, 80 lubricant
+burner inserter takes 0.5 in assembler, 1 gear, 1 iron plate
+inserter takes 0.5 in assembler, 1 green circuit, 1 gear, 1 iron plate
+long handed inserter takes 0.5 in assembler, 1 inserter, 1 gear, 1 iron plate
+fast inserter takes 0.5 in assembler, 2 green circuit, 1 inserter, 2 iron plate
+filter inserter takes 0.5 in assembler, 4 green circuit, 1 fast inserter
+stack inserter takes 0.5 in assembler, 1 red circuit, 15 green circuit, 1 blue circuit, 15 gear
+stack filter inserter takes 0.5 in assembler, 5 green circuit, 1 stack inserter
+2 small electric pole takes 0.5 in assembler, 2 copper wire, 2 wood
+medium electric pole takes 0.5 in assembler, 2 copper plate, 2 steel plate
+big electric pole takes 0.5 in assembler, 5 copper plate, 5 steel plate
+substation takes 0.5 in assembler, 5 copper plate, 10 steel plate, 5 red circuit
+pipe takes 0.5 in assembler, 1 iron plate
+2 underground pipe takes 0.5 in assembler, 5 iron plate, 10 pipe
+pump takes 2 in assembler, 1 engine, 1 pipe, 1 steel plate
+2 rail takes 0.5 in assembler, 1 iron stick, 1 steel plate, 1 stone
+train stop takes 0.5 in assembler, 5 green circuit, 10 iron plate, 3 steel plate
+rail signal takes 0.5 in assembler, 1 green circuit, 5 iron plate
+rail chain signal takes 0.5 in assembler, 1 green circuit, 5 iron plate
+locomotive takes 0.5 in assembler, 10 green circuit, 20 engine, 30 steel plate
+cargo wagon takes 0.5 in assembler, 10 gear, 20 iron plate, 20 steel plate
+fluid wagon takes 1.5 in assembler, 10 gear, 8 pipe, 16 steel plate, 3 storage tank
+car takes 0.5 in assembler, 8 engine, 20 iron plate, 5 steel plate
+tank takes 0.5 in assembler, 10 red circuit, 32 engine, 15 gear, 50 steel plate
+logistic robot takes 0.5 in assembler, 2 red circuit, 1 robot frame
+construction robot takes 0.5 in assembler, 2 green circuit, 1 robot frame
+active provider chest takes 0.5 in assembler, 1 red circuit, 3 green circuit, 1 steel chest
+passive provider chest takes 0.5 in assembler, 1 red circuit, 3 green circuit, 1 steel chest
+storage chest takes 0.5 in assembler, 1 red circuit, 3 green circuit, 1 steel chest
+requester chest takes 0.5 in assembler, 1 red circuit, 3 green circuit, 1 steel chest
+roboport takes 10 in assembler, 45 red circuit, 45 gear, 45 steel plate
+lamp takes 0.5 in assembler, 1 green circuit, 1 iron plate, 3 iron stick
+red wire takes 0.5 in assembler, 1 green circuit, 1 copper wire
+green wire takes 0.5 in assembler, 1 green circuit, 1 copper wire
+arithmetic combinator takes 0.5 in assembler, 5 copper wire, 5 green circuit
+decider combinator takes 0.5 in assembler, 5 copper wire, 5 green circuit
+constant combinator takes 0.5 in assembler, 5 copper wire, 2 green circuit
+power switch takes 2 in assembler, 5 copper wire, 2 green circuit, 5 iron plate
+speaker takes 2 in assembler, 5 copper wire, 4 green circuit, 5 iron plate
+stone brick takes 3.5 in furnace, 2 stone
+10 concrete takes 10 in assembler, 1 iron ore, 5 stone brick, 100 water
+10 hazard concrete takes 0.25 in assembler, 10 concrete
+landfill takes 0.5 in assembler, 20 stone
