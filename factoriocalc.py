@@ -137,11 +137,11 @@ def calc_mods(modules, base_speed, slots, can_prod, priorities):
 	return base_speed * (1 + speed_total), 1 + prod_total, used
 
 
-def solve(recipes, item, throughput):
+def solve(recipes, item, throughput, stop_items):
 	"""Returns a dict {item: number of buildings needed producing that item}
 	such that the requested throughput of the input item can be produced.
 	Items which don't have a recipe are also included, but their value is the amount of items
-	per second needed as input.
+	per second needed as input, as is anything in stop_items.
 	"""
 	_, per_building, inputs, _ = recipes[item]
 	buildings = throughput / per_building
@@ -149,8 +149,8 @@ def solve(recipes, item, throughput):
 	result = OrderedDict({item: buildings})
 	for name, amount in inputs.items():
 		amount *= throughput
-		if name in recipes:
-			subresult = solve(recipes, name, amount)
+		if name in recipes and name not in stop_items:
+			subresult = solve(recipes, name, amount, stop_items)
 		else:
 			# raw input, we represent it as one 'building' being one input per second
 			subresult = {name: amount}
@@ -163,7 +163,8 @@ def merge_into(a, b):
 		a[k] = a.get(k, 0) + v
 
 
-def main(items, rate, datafile='factorio_recipes', modules='', fractional=False, verbose=False):
+def main(items, rate, datafile='factorio_recipes', modules='', fractional=False, verbose=False,
+         stop_at=''):
 	"""Calculate ratios and output number of production facilities needed
 	to craft a specific output at a specific rate in Factorio.
 	Requires a data file specifying available recipies and buildings. See source for syntax.
@@ -174,6 +175,7 @@ def main(items, rate, datafile='factorio_recipes', modules='', fractional=False,
 	what modules should go in a building, with repeats for more than one of the same kind.
 	For example, an input like --modules='prod 1, prod 1, speed 1' will only put a speed module in
 	buildings with more than 2 slots.
+	stop-at can be given as a list of items to stop breaking down at, ie. to treat them as raw inputs.
 
 	Limitations:
 		- Can't know more than one recipe per unique output item (eg. different ways to make Solid Fuel)
@@ -183,13 +185,14 @@ def main(items, rate, datafile='factorio_recipes', modules='', fractional=False,
 	"""
 	items = [item.strip().lower() for item in items.split(',')]
 	modules = [name.strip().lower() for name in modules.split(',')] if modules else []
+	stop_items = [item.strip().lower() for item in stop_at.split(',')] if stop_at else []
 	recipes = get_recipes(datafile, modules, verbose)
 	rate = Fraction(rate)
 	results = {}
 	for item in items:
-		merge_into(results, solve(recipes, item, rate))
+		merge_into(results, solve(recipes, item, rate, stop_items))
 	for item, amount in results.items():
-		if item in recipes:
+		if item in recipes and item not in stop_items:
 			building, _, _, mods = recipes[item]
 			mods_str = ' with {}'.format(', '.join(
 				'{}x {}'.format(count, name)
