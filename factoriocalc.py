@@ -163,11 +163,12 @@ def merge_into(a, b):
 		a[k] = a.get(k, 0) + v
 
 
-def main(item, rate, datafile='factorio_recipes', modules='', fractional=False, verbose=False):
+def main(items, rate, datafile='factorio_recipes', modules='', fractional=False, verbose=False):
 	"""Calculate ratios and output number of production facilities needed
 	to craft a specific output at a specific rate in Factorio.
 	Requires a data file specifying available recipies and buildings. See source for syntax.
 	Defaults to a file 'factorio_recipes' in the current directory.
+	Item may be a single item, or a comma-seperated list.
 	Rate should be expressed in decimal items per second.
 	Modules to use can be given as a comma-seperated list, and should list priority order for
 	what modules should go in a building, with repeats for more than one of the same kind.
@@ -180,10 +181,13 @@ def main(item, rate, datafile='factorio_recipes', modules='', fractional=False, 
 		- Recipes can't have more than one output (eg. oil processing)
 		- No dependency cycles (eg. coal liquification, Kovarex enrichment)
 	"""
+	items = [item.strip().lower() for item in items.split(',')]
 	modules = [name.strip().lower() for name in modules.split(',')] if modules else []
 	recipes = get_recipes(datafile, modules, verbose)
 	rate = Fraction(rate)
-	results = solve(recipes, item, rate)
+	results = {}
+	for item in items:
+		merge_into(results, solve(recipes, item, rate))
 	for item, amount in results.items():
 		if item in recipes:
 			building, _, _, mods = recipes[item]
