@@ -7,6 +7,8 @@ Rocket silo builds at 1 with 4 modules
 # This 'launch' building represents that the act of launching a rocket converts rockets to white science.
 # Its speed value is meaningless.
 Launch builds at 1
+# Lab building is used for one unit of 'science researched', see 'infinite science'
+Lab builds at 1 with 2 modules
 
 # Modules. Note the short names for easier typing on cli.
 speed 1 module affects speed .2
@@ -23,6 +25,9 @@ prod 3 module affects speed -.15, prod .1
 # Online sources tell me launch time is ~41 seconds. So total time = 3s * 100 parts + 41s = 341s.
 # This will break once modules are taken into account.
 Rocket takes 341 in rocket silo, 1000 low density structure, 1000 rocket control unit, 1000 rocket fuel, can take productivity
+# For convenience, a wrapper that represents one unit of science at the 'infinite science' level,
+# ie. all kinds of science and 60s per pack.
+Infinite science takes 60 in lab, 1 red science, 1 green science, 1 black science, 1 blue science, 1 purple science, 1 yellow science, 1 white science, can take productivity
 
 # Intermediate Products
 # Omitted: petroleum, light oil, heavy oil, all uranium products
@@ -118,3 +123,40 @@ stone brick takes 3.5 in furnace, 2 stone
 10 concrete takes 10 in assembler, 1 iron ore, 5 stone brick, 100 water
 10 hazard concrete takes 0.25 in assembler, 10 concrete
 landfill takes 0.5 in assembler, 20 stone
+
+# Production
+Iron axe takes 0.5 in assembler, 3 iron plate, 2 iron stick
+Steel axe takes 0.5 in assembler, 5 steel plate, 2 iron stick
+Repair pack takes 0.5 in assembler, 2 green circuit, 2 gear
+Boiler takes 0.5 in assembler, 4 pipe, 1 stone furnace
+Steam engine takes 0.5 in assembler, 8 gear, 10 iron plate, 5 pipe
+Steam turbine takes 0.5 in assembler, 50 copper plate, 50 gear, 20 pipe
+Solar panel takes 10 in assembler, 5 copper plate, 15 green circuit, 5 steel plate
+Accumulator takes 10 in assembler, 5 battery, 2 iron plate
+Nuclear reactor takes 4 in assembler, 500 red circuit, 500 concrete, 500 copper plate, 500 steel plate
+Heat exchanger takes 0.5 in assembler, 100 copper plate, 10 pipe, 10 steel plate
+Heat pipe takes 0.5 in assembler, 20 copper plate, 10 steel plate
+Burner mining drill takes 2 in assembler, 3 gear, 3 iron plate, 1 stone furnace
+Electric mining drill takes 2 in assembler, 3 green circuit, 5 gear, 10 iron plate
+Offshore pump takes 0.5 in assembler, 2 green circuit, 1 gear, 1 pipe
+Pumpjack takes 5 in assembler, 5 green circuit, 10 gear, 10 pipe, 5 steel plate
+Stone furnace takes 0.5 in assembler, 5 stone
+Steel furnace takes 3 in assembler, 6 steel plate, 10 stone brick
+Electric furnace takes 5 in assembler, 5 red circuit, 10 steel plate, 10 stone brick
+Assembly machine 1 takes 0.5 in assembler, 3 green circuit, 5 gear, 9 iron plate
+Assembly machine 2 takes 0.5 in assembler, 1 assembly machine 1, 3 green circuit, 5 gear, 9 iron plate
+Assembly machine 3 takes 0.5 in assembler, 2 assembly machine 2, 4 speed module
+Oil refinery takes 10 in assembler, 10 green circuit, 10 gear, 10 pipe, 15 steel plate, 10 stone brick
+Chemical plant takes 5 in assembler, 5 green circuit, 5 gear, 5 pipe, 5 steel plate
+Centrifuge takes 4 in assembler, 100 red circuit, 100 concrete, 100 gear, 50 steel plate
+Lab takes 3 in assembler, 10 green circuit, 10 gear, 4 yellow belt
+Beacon takes 15 in assembler, 20 red circuit, 10 copper wire, 20 green circuit, 10 steel plate
+Speed module takes 15 in assembler, 5 red circuit, 5 green circuit
+Speed module 2 takes 30 in assembler, 5 red circuit, 5 blue circuit, 4 speed module
+Speed module 3 takes 60 in assembler, 5 red circuit, 5 blue circuit, 5 speed module 2
+Efficiency module takes 15 in assembler, 5 red circuit, 5 green circuit
+Efficiency module 2 takes 30 in assembler, 5 red circuit, 5 blue circuit, 4 efficiency module
+Efficiency module 3 takes 60 in assembler, 5 red circuit, 5 blue circuit, 5 efficiency module 2
+Productivity module takes 15 in assembler, 5 red circuit, 5 green circuit
+Productivity module 2 takes 30 in assembler, 5 red circuit, 5 blue circuit, 4 productivity module
+Productivity module 3 takes 60 in assembler, 5 red circuit, 5 blue circuit, 5 productivity module 2
