@@ -188,7 +188,7 @@ def main(items, rate, datafile='factorio_recipes', modules='', fractional=False,
 	stop_items = [item.strip().lower() for item in stop_at.split(',')] if stop_at else []
 	recipes = get_recipes(datafile, modules, verbose)
 	rate = Fraction(rate)
-	results = {}
+	results = OrderedDict()
 	for item in items:
 		merge_into(results, solve(recipes, item, rate, stop_items))
 	for item, amount in results.items():
