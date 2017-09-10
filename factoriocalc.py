@@ -194,14 +194,18 @@ def main(items, rate, datafile='factorio_recipes', modules='', fractional=False,
 		merge_into(results, solve(recipes, item, rate, stop_items))
 	for item, amount in results.items():
 		if item in recipes and item not in stop_items:
-			building, _, _, mods = recipes[item]
+			building, per_building, _, mods = recipes[item]
 			mods_str = ' with {}'.format(', '.join(
 				'{}x {}'.format(count, name)
 				for name, count in sorted(
 					Counter(mods).items(), key=lambda (name, count): (count, name)
 				)
 			)) if mods else ''
-			print '{} {}{} producing {}'.format((int(math.ceil(amount)) if not fractional else '{:.2f}'.format(float(amount))), building, mods_str, item)
+			throughput = amount * per_building
+			print '{} {}{} producing {:.2f}/sec of {}'.format(
+				(int(math.ceil(amount)) if not fractional else '{:.2f}'.format(float(amount))),
+				building, mods_str, float(throughput), item
+			)
 		else:
 			print '{:.2f}/sec of {}'.format(float(amount), item)
 
