@@ -146,7 +146,7 @@ def solve(recipes, item, throughput, stop_items):
 	_, per_building, inputs, _ = recipes[item]
 	buildings = throughput / per_building
 	# We use an ordered dict so later we can print items in dependency order
-	result = OrderedDict({item: buildings})
+	result = OrderedDict()
 	for name, amount in inputs.items():
 		amount *= throughput
 		if name in recipes and name not in stop_items:
@@ -155,6 +155,7 @@ def solve(recipes, item, throughput, stop_items):
 			# raw input, we represent it as one 'building' being one input per second
 			subresult = {name: amount}
 		merge_into(result, subresult)
+	merge_into(result, {item: buildings})
 	return result
 
 
