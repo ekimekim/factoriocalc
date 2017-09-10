@@ -49,7 +49,7 @@ Low density structure takes 30 in assembler, 5 copper plate, 5 plastic, 10 steel
 2 plastic takes 1 in chemical plant, 1 coal, 20 petroleum, can take productivity
 Rocket control unit takes 30 in assembler, 1 blue circuit, 1 speed module, can take productivity
 Rocket fuel takes 30 in assembler, 10 solid fuel, can take productivity
-Satellite takes 3 in assembler, 100 accumulators, 100 low density structure, 100 blue circuit, 5 radar, 50 rocket fuel, 100 solar panel, can take productivity
+Satellite takes 3 in assembler, 100 accumulator, 100 low density structure, 100 blue circuit, 5 radar, 50 rocket fuel, 100 solar panel, can take productivity
 Solid fuel takes 3 in chemical plant, 10 light oil, can take productivity
 Steel plate takes 17.5 in furnace, 5 iron plate, can take productivity
 2 sulfur takes 1 in chemical plant, 30 petroleum, 30 water, can take productivity
