@@ -10,7 +10,7 @@ from pprint import pprint
 from fractions import Fraction
 
 
-def get_recipes(datafile, module_priorities, verbose=False):
+def get_recipes(datafile, module_priorities, verbose=False, beacon_speed=0):
 	"""Data file consists of one entry per line. Each entry is either a recipe, building or module.
 	Building lines look like:
 		BUILDING builds at SPEED[ with N modules]
@@ -101,7 +101,8 @@ def get_recipes(datafile, module_priorities, verbose=False):
 		if building not in buildings:
 			raise ValueError("Error in {!r}: {!r} is built in {!r}, but no such building declared".format(item, building))
 		speed, slots = buildings[building]
-		speed, prod, mods = calc_mods(modules, speed, slots, can_prod, module_priorities)
+		speed, prod, mods = calc_mods(modules, speed, slots, can_prod, module_priorities, beacon_speed)
+		
 		amount = amount * prod
 		throughput = speed * amount / time
 		inputs = {input_name: Fraction(input_amount) / amount for input_name, input_amount in inputs.items()}
@@ -113,16 +114,17 @@ def get_recipes(datafile, module_priorities, verbose=False):
 	return results
 
 
-def calc_mods(modules, base_speed, slots, can_prod, priorities):
+def calc_mods(modules, base_speed, slots, can_prod, priorities, beacon_speed):
 	"""Calculates final (crafting speed, productivity, list of module names) of a building given:
 		- what modules exist
 		- building base speed and number of slots
 		- whether productivity increases are allowed for this recipe
+		- the speed effects of any nearby beacons
 		- a list of modules in priority order, including repeats. for example,
 		  a list like [A, A, B, A] will result in 2x A module if there's 2 slots, 2 As and 1 B if there's 3, 3 As and 1 B if there's 4 or more.
 	"""
 	used = []
-	speed_total = 0
+	speed_total = beacon_speed
 	prod_total = 0
 	to_consider = list(priorities)
 	while len(used) < slots and to_consider:
@@ -165,7 +167,7 @@ def merge_into(a, b):
 
 
 def main(items, rate, datafile='factorio_recipes', modules='', fractional=False, verbose=False,
-         stop_at=''):
+         stop_at='', beacon_speed=0):
 	"""Calculate ratios and output number of production facilities needed
 	to craft a specific output at a specific rate in Factorio.
 	Requires a data file specifying available recipies and buildings. See source for syntax.
@@ -177,6 +179,9 @@ def main(items, rate, datafile='factorio_recipes', modules='', fractional=False,
 	For example, an input like --modules='prod 1, prod 1, speed 1' will only put a speed module in
 	buildings with more than 2 slots.
 	stop-at can be given as a list of items to stop breaking down at, ie. to treat them as raw inputs.
+	beacon-speed can be given to apply a presumed global speed bonus regardless of building modules.
+	For example, to model 8 beacons in range of each building, with each beacon full of speed 3s,
+	you would use 8 * .5/2 = 2, and all buildings would act as having a speed bonus of 200%.
 
 	Limitations:
 		- Can't know more than one recipe per unique output item (eg. different ways to make Solid Fuel)
@@ -187,7 +192,7 @@ def main(items, rate, datafile='factorio_recipes', modules='', fractional=False,
 	items = [item.strip().lower() for item in items.split(',')]
 	modules = [name.strip().lower() for name in modules.split(',')] if modules else []
 	stop_items = [item.strip().lower() for item in stop_at.split(',')] if stop_at else []
-	recipes = get_recipes(datafile, modules, verbose)
+	recipes = get_recipes(datafile, modules, verbose, beacon_speed)
 	rate = Fraction(rate)
 	results = OrderedDict()
 	for item in items:
