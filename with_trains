@@ -11,3 +11,7 @@ Train Station builds at 1/15
 8000 iron ore takes 1 in train station
 8000 copper core takes 1 in train station
 8000 coal takes 1 in train station
+
+# Even in a train-based system, we don't bother training water
+Offshore Pump builds at 60
+2000 water takes 1 in offshore pump
