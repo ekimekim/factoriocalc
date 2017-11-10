@@ -1,5 +1,6 @@
 
 import math
+import os
 import re
 import sys
 from collections import OrderedDict, Counter
@@ -10,8 +11,27 @@ from pprint import pprint
 from fractions import Fraction
 
 
+def get_datafile_lines(datafile):
+	"""Resolve includes and yield (lineno, line) where lineno is a descriptive string of
+	'line number', eg. for an include it might look like "1:foo:5" for line 5 of file foo
+	included from line 1."""
+	with open(datafile) as f:
+		for n, line in enumerate(f):
+			if line.startswith('include '):
+				path = line[len('include '):-1] # -1 for trailing newline
+				path = os.path.join(os.path.dirname(datafile), path)
+				for lineno, line in get_datafile_lines(path):
+					yield '{}:{}:{}'.format(n, path, lineno), line
+			else:
+				yield n+1, line
+
+
 def get_recipes(datafile, module_priorities, verbose=False, beacon_speed=0):
-	"""Data file consists of one entry per line. Each entry is either a recipe, building or module.
+	"""Data file consists of one entry per line. Each entry is either an include, a recipe, building or module.
+	Include lines look like:
+		include PATH
+	and result in the other path (relative to the directory this file is in) being read as though it were
+	part of this file.
 	Building lines look like:
 		BUILDING builds at SPEED[ with N modules]
 	For example:
@@ -33,63 +53,61 @@ def get_recipes(datafile, module_priorities, verbose=False, beacon_speed=0):
 
 	This function returns a dict {item: (building, throughput per building, {input: input amount for 1 output}, list of modules used in building)}
 	"""
-	with open(datafile) as f:
-		buildings = {}
-		items = {}
-		modules = {}
-		for n, line in enumerate(f):
-			n += 1 # 1-based, not 0-based line numbers
-			line = line.strip()
-			if not line or line.startswith('#'):
+	buildings = {}
+	items = {}
+	modules = {}
+	for lineno, line in get_datafile_lines(datafile):
+		line = line.strip()
+		if not line or line.startswith('#'):
+			continue
+
+		try:
+			match = re.match('^([^,]+) builds at ([0-9.]+(?:/[0-9.]+)?)(?: with (\d+) modules)?$', line)
+			if match:
+				name, speed, mods = match.groups()
+				mods = int(mods) if mods else 0
+				name = name.lower()
+				if name in buildings:
+					raise ValueError('Building {!r} already declared'.format(name))
+				buildings[name] = Fraction(speed), mods
 				continue
 
-			try:
-				match = re.match('^([^,]+) builds at ([0-9.]+)(?: with (\d+) modules)?$', line)
-				if match:
-					name, speed, mods = match.groups()
-					mods = int(mods) if mods else 0
-					name = name.lower()
-					if name in buildings:
-						raise ValueError('Building {!r} already declared'.format(name))
-					buildings[name] = Fraction(speed), mods
-					continue
+			match = re.match('^(\d+ )?(.+) takes ([0-9.]+) in ([^,]+)((?:, \d+ [^,]+)*)(, can take productivity)?$', line)
+			if match:
+				amount, name, time, building, inputs_str, prod = match.groups()
+				amount = int(amount) if amount else 1
+				time = Fraction(time)
+				name = name.lower()
+				building = building.lower()
+				inputs = {}
+				if inputs_str:
+					for part in inputs_str.split(','):
+						part = part.strip()
+						if not part:
+							continue
+						input_amount, input_name = part.split(' ', 1)
+						input_amount = int(input_amount)
+						inputs[input_name] = input_amount
+				if name in items:
+					raise ValueError('Recipe for {!r} already declared'.format(name))
+				items[name] = amount, time, building, inputs, prod
+				continue
 
-				match = re.match('^(\d+ )?(.+) takes ([0-9.]+) in ([^,]+)((?:, \d+ [^,]+)*)(, can take productivity)?$', line)
-				if match:
-					amount, name, time, building, inputs_str, prod = match.groups()
-					amount = int(amount) if amount else 1
-					time = Fraction(time)
-					name = name.lower()
-					building = building.lower()
-					inputs = {}
-					if inputs_str:
-						for part in inputs_str.split(','):
-							part = part.strip()
-							if not part:
-								continue
-							input_amount, input_name = part.split(' ', 1)
-							input_amount = int(input_amount)
-							inputs[input_name] = input_amount
-					if name in items:
-						raise ValueError('Recipe for {!r} already declared'.format(name))
-					items[name] = amount, time, building, inputs, prod
-					continue
+			match = re.match('^([^,]+) module affects speed ([^,]+)(?:, prod ([^,]+))?$', line)
+			if match:
+				name, speed, prod = match.groups()
+				speed = Fraction(speed)
+				prod = Fraction(prod) if prod else 0
+				name = name.lower()
+				if name in modules:
+					raise ValueError('Module {!r} already declared'.format(name))
+				modules[name] = speed, prod
+				continue
 
-				match = re.match('^([^,]+) module affects speed ([^,]+)(?:, prod ([^,]+))?$', line)
-				if match:
-					name, speed, prod = match.groups()
-					speed = Fraction(speed)
-					prod = Fraction(prod) if prod else 0
-					name = name.lower()
-					if name in modules:
-						raise ValueError('Module {!r} already declared'.format(name))
-					modules[name] = speed, prod
-					continue
-
-				raise ValueError("Unknown entry syntax")
-			except Exception as e:
-				_, _, tb = sys.exc_info()
-				raise ValueError, ValueError("Error in line {} of {!r}: {}".format(n, datafile, e)), tb
+			raise ValueError("Unknown entry syntax")
+		except Exception as e:
+			_, _, tb = sys.exc_info()
+			raise ValueError, ValueError("Error in line {} of {!r}: {}".format(lineno, datafile, e)), tb
 
 	# validate module list
 	for mod in module_priorities:
