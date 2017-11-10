@@ -51,7 +51,15 @@ def get_recipes(datafile, module_priorities, verbose=False, beacon_speed=0):
 	Not all inputs need a way to produce them. These will be listed as "raw inputs"
 	in the results.
 
-	This function returns a dict {item: (building, throughput per building, {input: input amount for 1 output}, list of modules used in building)}
+	This function returns a dict:
+		{
+			item: (
+				building,
+				throughput per building,
+				{input: input amount for 1 output, ...},
+				list of modules used in building
+			), ...
+		}
 	"""
 	buildings = {}
 	items = {}
