@@ -171,17 +171,16 @@ def solve(recipes, item, throughput, stop_items):
 	Items which don't have a recipe are also included, but their value is the amount of items
 	per second needed as input, as is anything in stop_items.
 	"""
+	if item not in recipes or item in stop_items:
+		# raw input, we represent it as one 'building' being one input per second
+		return {item: throughput}
 	_, per_building, inputs, _ = recipes[item]
 	buildings = throughput / per_building
 	# We use an ordered dict so later we can print items in dependency order
 	result = OrderedDict()
 	for name, amount in inputs.items():
 		amount *= throughput
-		if name in recipes and name not in stop_items:
-			subresult = solve(recipes, name, amount, stop_items)
-		else:
-			# raw input, we represent it as one 'building' being one input per second
-			subresult = {name: amount}
+		subresult = solve(recipes, name, amount, stop_items)
 		merge_into(result, subresult)
 	merge_into(result, {item: buildings})
 	return result
