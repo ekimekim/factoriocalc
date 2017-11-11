@@ -295,7 +295,7 @@ def merge_into(a, b):
 
 
 def main(items, rate, datafile='factorio_recipes', modules='', fractional=False, verbose=False,
-         stop_at='', beacon_speed=0, oil=False):
+         stop_at='', beacon_speed=0, oil=False, inputs_visible=False):
 	"""Calculate ratios and output number of production facilities needed
 	to craft a specific output at a specific rate in Factorio.
 	Requires a data file specifying available recipies and buildings. See source for syntax.
@@ -318,6 +318,8 @@ def main(items, rate, datafile='factorio_recipes', modules='', fractional=False,
 
 	By default, oil processing is not considered (see limitations). However, oil can be considered
 	by including the --oil option. This may become default in the future.
+
+	Give --inputs-visible option to also include recipe inputs for each step. Useful for logistic planning.
 
 	Limitations:
 		- Can't know more than one recipe per unique output item (eg. different ways to make Solid Fuel)
@@ -345,23 +347,33 @@ def main(items, rate, datafile='factorio_recipes', modules='', fractional=False,
 			)
 		)) if mods else ''
 
-	def format_item(building, amount, throughput, mods, item):
-		return '{} {}{} producing {:.2f}/sec of {}'.format(
+	def input_str(throughput, inputs):
+		if not inputs_visible or not inputs:
+			return ''
+		return ' using {}'.format(
+			', '.join(
+				'{:.2f}/sec {}'.format(float(throughput * item_amount), item)
+				for item, item_amount in inputs.items()
+			)
+		)
+
+	def format_item(building, amount, throughput, mods, item, inputs):
+		return '{} {}{} producing {:.2f}/sec of {}{}'.format(
 			(int(math.ceil(amount)) if not fractional else '{:.2f}'.format(float(amount))),
-			building, mods_str(mods), float(throughput), item
+			building, mods_str(mods), float(throughput), item, input_str(throughput, inputs)
 		)
 
 	for item, amount in results.items():
 		if item in recipes and item not in stop_items:
-			building, per_building, _, mods = recipes[item]
+			building, per_building, inputs, mods = recipes[item]
 			throughput = amount * per_building
-			print format_item(building, amount, throughput, mods, item)
+			print format_item(building, amount, throughput, mods, item, inputs)
 		else:
 			print '{:.2f}/sec of {}'.format(float(amount), item)
 	for recipe, name, amount in oil_buildings:
 		building, per_building, _, mods = recipes[recipe]
 		throughput = amount * per_building # this doesn't make much sense, it's completed processes per sec
-		print format_item(building, amount, throughput, mods, name)
+		print format_item(building, amount, throughput, mods, name, {})
 
 
 if __name__ == '__main__':
