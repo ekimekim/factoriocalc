@@ -217,11 +217,11 @@ def solve_oil(recipes, targets):
 	_, cracking_throughput, dummy, _ = recipes['oil cracking']
 	cracking_input_factor = dummy['dummy']
 
-	light_per_heavy = HEAVY_LIGHT_OUT / (HEAVY_LIGHT_IN * cracking_input_factor)
-	petrol_per_light = LIGHT_PETROL_OUT / (LIGHT_PETROL_IN * cracking_input_factor)
-	petrol_per_process = PETROL_PER_PROCESS / refinery_input_factor
-	light_per_process = LIGHT_PER_PROCESS / refinery_input_factor
-	heavy_per_process = HEAVY_PER_PROCESS / refinery_input_factor
+	light_per_heavy = HEAVY_LIGHT_OUT / Fraction(HEAVY_LIGHT_IN * cracking_input_factor)
+	petrol_per_light = LIGHT_PETROL_OUT / Fraction(LIGHT_PETROL_IN * cracking_input_factor)
+	petrol_per_process = PETROL_PER_PROCESS / Fraction(refinery_input_factor)
+	light_per_process = LIGHT_PER_PROCESS / Fraction(refinery_input_factor)
+	heavy_per_process = HEAVY_PER_PROCESS / Fraction(refinery_input_factor)
 
 	excesses = {} # note, negative values
 	heavy_cracking = 0 # measured in how many refinery processes' of heavy we need to crack
@@ -229,7 +229,7 @@ def solve_oil(recipes, targets):
 	# since we have no other way of getting more heavy oil, we consider it first
 	# to get an absolute minimum.
 	heavy_throughput = refinery_throughput * heavy_per_process
-	refineries = targets.pop('heavy oil', 0) / heavy_throughput
+	refineries = targets.pop('heavy oil', 0) / Fraction(heavy_throughput)
 	# now, we assume any additional heavy becomes light oil, and calculate what we need for
 	# light with that in mind. We also take into account any light oil we're already making.
 	extra_light = targets.pop('light oil', 0) - refineries * refinery_throughput * light_per_process
@@ -237,7 +237,7 @@ def solve_oil(recipes, targets):
 		excesses['light oil'] = extra_light
 	else:
 		light_throughput = refinery_throughput * (light_per_process + heavy_per_process * light_per_heavy)
-		refineries_for_light = extra_light / light_throughput
+		refineries_for_light = extra_light / Fraction(light_throughput)
 		heavy_cracking += refineries_for_light
 		refineries += refineries_for_light
 	# then we do the same for petroleum, assuming all heavy + light is getting cracked
@@ -250,13 +250,13 @@ def solve_oil(recipes, targets):
 				light_per_process + heavy_per_process * light_per_heavy
 			)
 		)
-		refineries_for_petrol = extra_petrol / petrol_throughput
+		refineries_for_petrol = extra_petrol / Fraction(petrol_throughput)
 		heavy_cracking += refineries_for_petrol
 		light_cracking += refineries_for_petrol
 		refineries += refineries_for_petrol
 	# now we calculate inputs, include excesses, and build the outputs.
-	heavy_crackers = heavy_cracking * refinery_throughput * heavy_per_process / (HEAVY_LIGHT_IN * cracking_throughput)
-	light_crackers = light_cracking * refinery_throughput * (light_per_process + heavy_per_process * light_per_heavy) / (LIGHT_PETROL_IN * cracking_throughput)
+	heavy_crackers = heavy_cracking * refinery_throughput * heavy_per_process / Fraction(HEAVY_LIGHT_IN * cracking_throughput)
+	light_crackers = light_cracking * refinery_throughput * (light_per_process + heavy_per_process * light_per_heavy) / Fraction(LIGHT_PETROL_IN * cracking_throughput)
 	merge_into(targets, excesses)
 	buildings = []
 	further_inputs = OrderedDict()
