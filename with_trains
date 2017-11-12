@@ -9,8 +9,10 @@ Train Station builds at 1/15
 # We're assuming trains have 4 full cargo wagons of product = 160 stacks
 # eg. ores have a stack size of 50, 50 * 160 = 8000
 8000 iron ore takes 1 in train station
-8000 copper core takes 1 in train station
+8000 copper ore takes 1 in train station
 8000 coal takes 1 in train station
+# Assuming fluid trains have 1 full tank = 75k
+75000 crude oil takes 1 in train station
 
 # Even in a train-based system, we don't bother training water
 Offshore Pump builds at 60
