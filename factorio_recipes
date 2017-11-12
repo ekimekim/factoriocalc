@@ -165,3 +165,6 @@ Efficiency module 3 takes 60 in assembler, 5 red circuit, 5 blue circuit, 5 effi
 Productivity module takes 15 in assembler, 5 red circuit, 5 green circuit
 Productivity module 2 takes 30 in assembler, 5 red circuit, 5 blue circuit, 4 productivity module
 Productivity module 3 takes 60 in assembler, 5 red circuit, 5 blue circuit, 5 productivity module 2
+
+# Combat
+Radar takes 0.5 in assembler, 5 green circuit, 5 gear, 10 iron plate
