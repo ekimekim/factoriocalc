@@ -295,7 +295,7 @@ def merge_into(a, b):
 
 
 def main(items, rate, datafile='factorio_recipes', modules='', fractional=False, verbose=False,
-         stop_at='', beacon_speed=0, oil=False, inputs_visible=False):
+         stop_at='', beacon_speed=0., oil=False, inputs_visible=False):
 	"""Calculate ratios and output number of production facilities needed
 	to craft a specific output at a specific rate in Factorio.
 	Requires a data file specifying available recipies and buildings. See source for syntax.
