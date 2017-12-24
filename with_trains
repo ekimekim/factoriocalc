@@ -15,5 +15,5 @@ Train Station builds at 1/15
 75000 crude oil takes 1 in train station
 
 # Even in a train-based system, we don't bother training water
-Offshore Pump builds at 60
-2000 water takes 1 in offshore pump
+Offshore Pump builds at 1
+1200 water takes 1 in offshore pump
