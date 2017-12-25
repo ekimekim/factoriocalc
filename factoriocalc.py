@@ -187,7 +187,7 @@ def solve(recipes, item, throughput, stop_items):
 	return result
 
 
-def solve_oil(recipes, targets):
+def solve_oil(recipes, targets, verbose=False):
 	"""Special case solver for standard oil products calculations.
 	We use a hack to integrate this calculation with existing features
 	around modules, beacon speed, etc. Recipes should contain a dummy
@@ -206,6 +206,10 @@ def solve_oil(recipes, targets):
 	If we have excess products, we include a raw output for a negative amount of it
 	to indicate to the user that it must be dealt with in some external way.
 	"""
+	def p(s, *a, **k):
+		if verbose:
+			print s.format(*a, **k)
+
 	HEAVY_PER_PROCESS, LIGHT_PER_PROCESS, PETROL_PER_PROCESS = 10, 45, 55
 	PROCESS_INPUTS = {"crude oil": 100, "water": 50}
 	HEAVY_LIGHT_IN, HEAVY_LIGHT_OUT = 40, 30
@@ -231,19 +235,23 @@ def solve_oil(recipes, targets):
 	# to get an absolute minimum.
 	heavy_throughput = refinery_throughput * heavy_per_process
 	refineries = targets.pop('heavy oil', 0) / Fraction(heavy_throughput)
+	p('from heavy oil targets: {} refineries', refineries)
 	# now, we assume any additional heavy becomes light oil, and calculate what we need for
 	# light with that in mind. We also take into account any light oil we're already making.
 	extra_light = targets.pop('light oil', 0) - refineries * refinery_throughput * light_per_process
 	if extra_light < 0:
+		p('got excess {} light from heavy targets', -extra_light)
 		excesses['light oil'] = extra_light
 	else:
 		light_throughput = refinery_throughput * (light_per_process + heavy_per_process * light_per_heavy)
 		refineries_for_light = extra_light / Fraction(light_throughput)
 		heavy_cracking += refineries_for_light
 		refineries += refineries_for_light
+		p('from extra {} light oil targets: {} refineries and crackers', extra_light, refineries_for_light)
 	# then we do the same for petroleum, assuming all heavy + light is getting cracked
 	extra_petrol = targets.pop('petroleum', 0) - refineries * refinery_throughput * petrol_per_process
 	if extra_petrol < 0:
+		p('got excess {} petrol from earlier targets', -extra_petrol)
 		excesses['petroleum'] = extra_petrol
 	else:
 		petrol_throughput = refinery_throughput * (
@@ -255,6 +263,7 @@ def solve_oil(recipes, targets):
 		heavy_cracking += refineries_for_petrol
 		light_cracking += refineries_for_petrol
 		refineries += refineries_for_petrol
+		p('from extra {} petrol targets: {} refineries and crackers', extra_petrol, refineries_for_petrol)
 	# now we calculate inputs, include excesses, and build the outputs.
 	heavy_crackers = heavy_cracking * refinery_throughput * heavy_per_process / Fraction(HEAVY_LIGHT_IN * cracking_throughput)
 	light_crackers = light_cracking * refinery_throughput * (light_per_process + heavy_per_process * light_per_heavy) / Fraction(LIGHT_PETROL_IN * cracking_throughput)
@@ -281,11 +290,11 @@ def solve_all(recipes, items, stop_items):
 	return results
 
 
-def solve_with_oil(recipes, items, stop_items):
+def solve_with_oil(recipes, items, stop_items, verbose=False):
 	"""As per solve_all, but follow it with a call to solve_oil to resolve any oil products.
 	It returns (results, buildings) as per solve_oil()"""
 	results = solve_all(recipes, items, stop_items)
-	results, further_inputs, buildings = solve_oil(recipes, results)
+	results, further_inputs, buildings = solve_oil(recipes, results, verbose=verbose)
 	merge_into(results, solve_all(recipes, further_inputs, stop_items))
 	return results, buildings
 
@@ -335,7 +344,7 @@ def main(items, rate, datafile='factorio_recipes', modules='', fractional=False,
 	rate = Fraction(rate)
 	items = OrderedDict((item, rate) for item in items)
 	if oil:
-		results, oil_buildings = solve_with_oil(recipes, items, stop_items)
+		results, oil_buildings = solve_with_oil(recipes, items, stop_items, verbose=verbose)
 	else:
 		results = solve_all(recipes, items, stop_items)
 		oil_buildings = []
