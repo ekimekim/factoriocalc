@@ -7,7 +7,7 @@ Refinery builds at 1 with 3 modules
 Rocket silo builds at 1 with 4 modules
 # This 'launch' building represents that the act of launching a rocket converts rockets to white science.
 # Its speed value is meaningless.
-Launch builds at 1
+Launch builds at 1, not affected by beacons
 # Lab building is used for one unit of 'science researched', see 'infinite science'
 Lab builds at 1 with 2 modules
 

@@ -33,7 +33,7 @@ def get_recipes(datafile, module_priorities, verbose=False, beacon_speed=0):
 	and result in the other path (relative to the directory this file is in) being read as though it were
 	part of this file.
 	Building lines look like:
-		BUILDING builds at SPEED[ with N modules]
+		BUILDING builds at SPEED[ with N modules][, not affected by beacons]
 	For example:
 		Assembler builds at 1.25 with 4 modules
 	Recipe lines look like:
@@ -70,14 +70,15 @@ def get_recipes(datafile, module_priorities, verbose=False, beacon_speed=0):
 			continue
 
 		try:
-			match = re.match('^([^,]+) builds at ([0-9.]+(?:/[0-9.]+)?)(?: with (\d+) modules)?$', line)
+			match = re.match('^([^,]+) builds at ([0-9.]+(?:/[0-9.]+)?)(?: with (\d+) modules)?(, not affected by beacons)?$', line)
 			if match:
-				name, speed, mods = match.groups()
+				name, speed, mods, can_not_beacon = match.groups()
 				mods = int(mods) if mods else 0
+				can_beacon = not can_not_beacon
 				name = name.lower()
 				if name in buildings:
 					raise ValueError('Building {!r} already declared'.format(name))
-				buildings[name] = Fraction(speed), mods
+				buildings[name] = Fraction(speed), mods, can_beacon
 				continue
 
 			match = re.match('^(\d+ )?(.+) takes ([0-9.]+) in ([^,]+)((?:, \d+ [^,]+)*)(, can take productivity)?$', line)
@@ -126,8 +127,8 @@ def get_recipes(datafile, module_priorities, verbose=False, beacon_speed=0):
 	for item, (amount, time, building, inputs, can_prod) in items.items():
 		if building not in buildings:
 			raise ValueError("Error in {!r}: {!r} is built in {!r}, but no such building declared".format(datafile, item, building))
-		speed, slots = buildings[building]
-		speed, prod, mods = calc_mods(modules, speed, slots, can_prod, module_priorities, beacon_speed)
+		speed, slots, can_beacon = buildings[building]
+		speed, prod, mods = calc_mods(modules, speed, slots, can_prod, module_priorities, (beacon_speed if can_beacon else 0))
 		
 		amount = amount * prod
 		throughput = speed * amount / time

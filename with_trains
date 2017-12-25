@@ -4,7 +4,7 @@
 include factorio_recipes
 
 # change the denominator here to change assumed time for train arrive + offload + leave.
-Train Station builds at 1/20
+Train Station builds at 1/20, not affected by beacons
 
 # We're assuming trains have 4 full cargo wagons of product = 160 stacks
 # eg. ores have a stack size of 50, 50 * 160 = 8000
@@ -16,5 +16,5 @@ Train Station builds at 1/20
 75000 crude oil takes 1 in train station
 
 # Even in a train-based system, we don't bother training water
-Offshore Pump builds at 1
+Offshore Pump builds at 1, not affected by beacons
 1200 water takes 1 in offshore pump
