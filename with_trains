@@ -4,13 +4,14 @@
 include factorio_recipes
 
 # change the denominator here to change assumed time for train arrive + offload + leave.
-Train Station builds at 1/15
+Train Station builds at 1/20
 
 # We're assuming trains have 4 full cargo wagons of product = 160 stacks
 # eg. ores have a stack size of 50, 50 * 160 = 8000
 8000 iron ore takes 1 in train station
 8000 copper ore takes 1 in train station
 8000 coal takes 1 in train station
+8000 stone takes 1 in train station
 # Assuming fluid trains have 1 full tank = 75k
 75000 crude oil takes 1 in train station
 
