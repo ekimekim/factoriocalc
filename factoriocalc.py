@@ -206,6 +206,10 @@ def solve_oil(recipes, targets, verbose=False):
 	If we have excess products, we include a raw output for a negative amount of it
 	to indicate to the user that it must be dealt with in some external way.
 	"""
+
+	# TODO this is off. cracker amounts aren't being calculated correctly, though they're almost right?
+	# sigh, it's a clusterfuck.
+
 	def p(s, *a, **k):
 		if verbose:
 			print s.format(*a, **k)
@@ -228,7 +232,7 @@ def solve_oil(recipes, targets, verbose=False):
 	light_per_process = LIGHT_PER_PROCESS / Fraction(refinery_input_factor)
 	heavy_per_process = HEAVY_PER_PROCESS / Fraction(refinery_input_factor)
 
-	excesses = {} # note, negative values
+	excesses = {}
 	heavy_cracking = 0 # measured in how many refinery processes' of heavy we need to crack
 	light_cracking = 0 # as above
 	# since we have no other way of getting more heavy oil, we consider it first
@@ -254,16 +258,30 @@ def solve_oil(recipes, targets, verbose=False):
 		p('got excess {} petrol from earlier targets', -extra_petrol)
 		excesses['petroleum'] = extra_petrol
 	else:
-		petrol_throughput = refinery_throughput * (
-			petrol_per_process + petrol_per_light * (
-				light_per_process + heavy_per_process * light_per_heavy
+		# first, try to resolve the petrol shortfall by cracking any excess light oil
+		petrol_available = -excesses.get('light oil', 0) * petrol_per_light
+		if petrol_available > extra_petrol:
+			# we can make up for the shortfall entirely
+			excesses['light oil'] += extra_petrol / petrol_per_light
+			new_light_cracking = refinery_throughput * extra_petrol
+			light_cracking += new_light_cracking
+			p('used {} excess light to make up extra {} petrol needed with {} crackers', extra_petrol / petrol_per_light, extra_petrol, new_light_cracking)
+		else:
+			extra_petrol -= petrol_available
+			new_light_cracking = refinery_throughput * petrol_available
+			light_cracking += new_light_cracking
+			p('used {} excess light to help make up extra {} petrol needed with {} crackers', -excesses.get('light oil', 0), petrol_available, new_light_cracking)
+			excesses.pop('light oil', None)
+			petrol_throughput = refinery_throughput * (
+				petrol_per_process + petrol_per_light * (
+					light_per_process + heavy_per_process * light_per_heavy
+				)
 			)
-		)
-		refineries_for_petrol = extra_petrol / Fraction(petrol_throughput)
-		heavy_cracking += refineries_for_petrol
-		light_cracking += refineries_for_petrol
-		refineries += refineries_for_petrol
-		p('from extra {} petrol targets: {} refineries and crackers', extra_petrol, refineries_for_petrol)
+			refineries_for_petrol = extra_petrol / Fraction(petrol_throughput)
+			heavy_cracking += refineries_for_petrol
+			light_cracking += refineries_for_petrol
+			refineries += refineries_for_petrol
+			p('from extra {} petrol targets: {} refineries and crackers', extra_petrol, refineries_for_petrol)
 	# now we calculate inputs, include excesses, and build the outputs.
 	heavy_crackers = heavy_cracking * refinery_throughput * heavy_per_process / Fraction(HEAVY_LIGHT_IN * cracking_throughput)
 	light_crackers = light_cracking * refinery_throughput * (light_per_process + heavy_per_process * light_per_heavy) / Fraction(LIGHT_PETROL_IN * cracking_throughput)
