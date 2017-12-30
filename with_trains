@@ -12,7 +12,7 @@ Train Station builds at 1/20, not affected by beacons
 8000 copper ore takes 1 in train station
 8000 coal takes 1 in train station
 8000 stone takes 1 in train station
-# Assuming fluid trains have 1 full tank = 75k
+# Assuming fluid trains have 3 full tanks = 75k
 75000 crude oil takes 1 in train station
 
 # Even in a train-based system, we don't bother training water
