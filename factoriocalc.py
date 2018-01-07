@@ -368,6 +368,9 @@ def main(items, rate, datafile='factorio_recipes', modules='', fractional=False,
 		results = solve_all(recipes, items, stop_items)
 		oil_buildings = []
 
+	def maybe_round(amount):
+		return '{:.2f}'.format(float(amount)) if fractional else int(math.ceil(amount))
+
 	def mods_str(mods):
 		return ' with {}'.format(', '.join(
 			'{}x {}'.format(count, name)
@@ -386,10 +389,28 @@ def main(items, rate, datafile='factorio_recipes', modules='', fractional=False,
 			)
 		)
 
+	def format_extra(building, amount, throughput, mods, item, inputs):
+		MAX_PER_ROW = 40 # one blue belt
+		EXCLUDE = ['water', 'crude oil', 'petroleum', 'light oil', 'heavy oil', 'sufuric acid', 'lubricant']
+		to_consider = [
+			throughput * item_amount
+			for _item, item_amount in inputs.items()
+			if _item not in EXCLUDE
+		]
+		if item not in EXCLUDE:
+			to_consider.append(throughput)
+		rows = int(math.ceil(max(to_consider) / MAX_PER_ROW)) if to_consider else 1
+		if not verbose or rows == 1:
+			return ''
+		return '\n\tin {} rows of {} each producing {:.2f}/sec{}'.format(
+			rows, maybe_round(amount/rows), float(throughput / rows), input_str(throughput/rows, inputs),
+		)
+
 	def format_item(building, amount, throughput, mods, item, inputs):
-		return '{} {}{} producing {:.2f}/sec of {}{}'.format(
-			(int(math.ceil(amount)) if not fractional else '{:.2f}'.format(float(amount))),
-			building, mods_str(mods), float(throughput), item, input_str(throughput, inputs)
+		return '{} {}{} producing {:.2f}/sec of {}{}{}'.format(
+			maybe_round(amount),
+			building, mods_str(mods), float(throughput), item, input_str(throughput, inputs),
+			format_extra(building, amount, throughput, mods, item, inputs),
 		)
 
 	for item, amount in results.items():
