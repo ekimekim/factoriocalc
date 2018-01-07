@@ -1,10 +1,11 @@
 
+import logging
 import math
 import os
 import re
 import sys
 from collections import OrderedDict, Counter
-from pprint import pprint
+from pprint import pformat
 
 # We use ceil() at the end of calculations, and don't want floating point error
 # to make us slightly over an integer and cause us to add another for no reason.
@@ -26,7 +27,7 @@ def get_datafile_lines(datafile):
 				yield n+1, line
 
 
-def get_recipes(datafile, module_priorities, verbose=False, beacon_speed=0):
+def get_recipes(datafile, module_priorities, beacon_speed=0):
 	"""Data file consists of one entry per line. Each entry is either an include, a recipe, building or module.
 	Include lines look like:
 		include PATH
@@ -135,8 +136,7 @@ def get_recipes(datafile, module_priorities, verbose=False, beacon_speed=0):
 		inputs = {input_name: Fraction(input_amount) / amount for input_name, input_amount in inputs.items()}
 		results[item] = building, throughput, inputs, mods
 
-	if verbose:
-		pprint(results)
+	logging.debug(pformat(results))
 
 	return results
 
@@ -187,7 +187,7 @@ def solve(recipes, item, throughput, stop_items):
 	return result
 
 
-def solve_oil(recipes, targets, verbose=False):
+def solve_oil(recipes, targets):
 	"""Special case solver for standard oil products calculations.
 	We use a hack to integrate this calculation with existing features
 	around modules, beacon speed, etc. Recipes should contain a dummy
@@ -211,8 +211,7 @@ def solve_oil(recipes, targets, verbose=False):
 	# sigh, it's a clusterfuck.
 
 	def p(s, *a, **k):
-		if verbose:
-			print s.format(*a, **k)
+		logging.debug(s.format(*a, **k))
 
 	HEAVY_PER_PROCESS, LIGHT_PER_PROCESS, PETROL_PER_PROCESS = 10, 45, 55
 	PROCESS_INPUTS = {"crude oil": 100, "water": 50}
@@ -308,11 +307,11 @@ def solve_all(recipes, items, stop_items):
 	return results
 
 
-def solve_with_oil(recipes, items, stop_items, verbose=False):
+def solve_with_oil(recipes, items, stop_items):
 	"""As per solve_all, but follow it with a call to solve_oil to resolve any oil products.
 	It returns (results, buildings) as per solve_oil()"""
 	results = solve_all(recipes, items, stop_items)
-	results, further_inputs, buildings = solve_oil(recipes, results, verbose=verbose)
+	results, further_inputs, buildings = solve_oil(recipes, results)
 	merge_into(results, solve_all(recipes, further_inputs, stop_items))
 	return results, buildings
 
@@ -322,8 +321,8 @@ def merge_into(a, b):
 		a[k] = a.get(k, 0) + v
 
 
-def main(items, rate, datafile='factorio_recipes', modules='', fractional=False, verbose=False,
-         stop_at='', beacon_speed=0., oil=False, inputs_visible=False):
+def main(items, rate, datafile='factorio_recipes', modules='', fractional=False, log='WARNING',
+         stop_at='', beacon_speed=0., oil=False, verbose=False):
 	"""Calculate ratios and output number of production facilities needed
 	to craft a specific output at a specific rate in Factorio.
 	Requires a data file specifying available recipies and buildings. See source for syntax.
@@ -355,14 +354,16 @@ def main(items, rate, datafile='factorio_recipes', modules='', fractional=False,
 		- Recipes can't have more than one output (eg. oil processing)
 		- No dependency cycles (eg. coal liquification, Kovarex enrichment)
 	"""
+	logging.basicConfig(level=log.upper())
+
 	items = [item.strip().lower() for item in items.split(',')]
 	modules = [name.strip().lower() for name in modules.split(',')] if modules else []
 	stop_items = [item.strip().lower() for item in stop_at.split(',')] if stop_at else []
-	recipes = get_recipes(datafile, modules, verbose, beacon_speed)
+	recipes = get_recipes(datafile, modules, beacon_speed)
 	rate = Fraction(rate)
 	items = OrderedDict((item, rate) for item in items)
 	if oil:
-		results, oil_buildings = solve_with_oil(recipes, items, stop_items, verbose=verbose)
+		results, oil_buildings = solve_with_oil(recipes, items, stop_items)
 	else:
 		results = solve_all(recipes, items, stop_items)
 		oil_buildings = []
@@ -376,7 +377,7 @@ def main(items, rate, datafile='factorio_recipes', modules='', fractional=False,
 		)) if mods else ''
 
 	def input_str(throughput, inputs):
-		if not inputs_visible or not inputs:
+		if not verbose or not inputs:
 			return ''
 		return ' using {}'.format(
 			', '.join(
