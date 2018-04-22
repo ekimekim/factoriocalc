@@ -82,7 +82,7 @@ def get_recipes(datafile, module_priorities, beacon_speed=0):
 				buildings[name] = Fraction(speed), mods, can_beacon
 				continue
 
-			match = re.match('^(\d+ )?(.+) takes ([0-9.]+) in ([^,]+)((?:, \d+ [^,]+)*)(, can take productivity)?$', line)
+			match = re.match('^(\d+ )?(.+) takes ([0-9.]+) in ([^,]+)((?:, [0-9.]+ [^,]+)*)(, can take productivity)?$', line)
 			if match:
 				amount, name, time, building, inputs_str, prod = match.groups()
 				amount = int(amount) if amount else 1
@@ -96,7 +96,7 @@ def get_recipes(datafile, module_priorities, beacon_speed=0):
 						if not part:
 							continue
 						input_amount, input_name = part.split(' ', 1)
-						input_amount = int(input_amount)
+						input_amount = Fraction(input_amount)
 						inputs[input_name] = input_amount
 				if name in items:
 					raise ValueError('Recipe for {!r} already declared'.format(name))
