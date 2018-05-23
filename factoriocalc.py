@@ -321,7 +321,7 @@ def merge_into(a, b):
 		a[k] = a.get(k, 0) + v
 
 
-def main(items, rate, datafile='factorio_recipes', modules='', fractional=False, log='WARNING',
+def main(items, rate, datafile='factorio_recipes', modules='prod 3, prod 3, prod 3, prod 3, speed 3, speed 3, speed 3, speed 3', fractional=False, log='WARNING',
          stop_at='', beacon_speed=0., oil=False, verbose=False):
 	"""Calculate ratios and output number of production facilities needed
 	to craft a specific output at a specific rate in Factorio.
@@ -341,7 +341,7 @@ def main(items, rate, datafile='factorio_recipes', modules='', fractional=False,
 
 	beacon-speed can be given to apply a presumed global speed bonus regardless of building modules.
 	For example, to model 8 beacons in range of each building, with each beacon full of speed 3s,
-	you would use 8 * .5/2 = 2, and all buildings would act as having a speed bonus of 200%.
+	you would use 8 * .5 = 4, and all buildings would act as having a speed bonus of 400%.
 
 	By default, oil processing is not considered (see limitations). However, oil can be considered
 	by including the --oil option. This may become default in the future.
