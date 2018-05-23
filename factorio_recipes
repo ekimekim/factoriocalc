@@ -66,7 +66,7 @@ Steel plate takes 17.5 in furnace, 5 iron plate, can take productivity
 1 green science takes 6 in assembler, 1 inserter, 1 yellow belt, can take productivity
 1 blue science takes 12 in assembler, 1 red circuit, 1 electric mining drill, 1 engine, can take productivity
 2 black science takes 10 in assembler, 1 grenade, 1 gun turret, 1 piercing ammo, can take productivity
-2 purple science takes 14 in assembler, 1 assembly machine 1, 1 electric engine, 1 electric furnace, can take productivity
+2 purple science takes 14 in assembler, 1 electric engine, 1 electric furnace, can take productivity
 2 yellow science takes 14 in assembler, 1 battery, 30 copper wire, 3 blue circuit, 1 speed module, can take productivity
 # We model white science as coming from a rocket + a sattelite. Since it has no actual 'build time'
 # we set it to a very low number so it will be pretty much always ignored.
