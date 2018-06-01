@@ -391,7 +391,7 @@ def main(items, rate, datafile='factorio_recipes', modules='prod 3, prod 3, prod
 
 	def format_extra(building, amount, throughput, mods, item, inputs):
 		MAX_PER_ROW = 40 # one blue belt
-		EXCLUDE = ['water', 'crude oil', 'petroleum', 'light oil', 'heavy oil', 'sufuric acid', 'lubricant']
+		EXCLUDE = ['water', 'crude oil', 'petroleum', 'light oil', 'heavy oil', 'sulfuric acid', 'lubricant']
 		to_consider = [
 			throughput * item_amount
 			for _item, item_amount in inputs.items()
