@@ -1,0 +1,47 @@
+Given an output product and amount, generates a blueprint for a factory that
+will produce that product from the specified inputs.
+
+This sounds complex but can be broken into relatively simple stages:
+	calculator:
+		Works out what processing is required and in what amounts,
+		outputting a DAG of processes.
+		This stage is pretty much already done.
+	belt manager:
+		Transforms the DAG of full processes into a sequence of steps,
+		each of which takes inputs from specific belts and sends outputs to specific belts.
+		The belt manager tracks the rate of items on each belt, optimizing to keep
+		the bus thin (low maximum number of belts used at once) without needing to
+		compress too often.
+		It outputs a sequence of either a step
+			(eg. 23 assemblers producing green circuit from inputs 3 and 5, outputting to 6)
+		or a bus-wide compaction that obeys some strict rules.
+			Speculation: Compaction rules depend on what belt compactor primitives look
+			like and where they can fit. eg. "a 2-wide compactor that can compact
+			belts N and N+1 with priority to belt N" or "a M-wide compactor that can
+			compact belts N and N+M-1 with priority to belt N, but cannot be combined
+			with usage of the belts between".
+			So a full compaction step may look like "compact 1&2, 4&6, 7&8, 9&10"
+		This is expected to be the most complex stage.
+	layouter:
+		Transforms a belt manager sequence into a collection of primitives.
+		Examples of primitives would be compactors, bus segments, or process steps
+		with a certain number of inputs and a configurable size, in a certain location.
+		Examples of primtives with arguments:
+			A 2-wide compactor compacting belts 2 and 3
+			A bus I/O section delivering belts 5 and 10 as inputs, and outputting to belt 6.
+			A process section creating an item with 3 inputs, with 10 assemblers.
+		This stage is expected to need to handle some corner cases around spacing.
+	blitter:
+		Blits all the components of each primitive into a collection of raw components,
+		eg. an assembler, a belt, a splitter, all laid out on a grid where they should go.
+		This stage should be fairly simple.
+	encoder:
+		Takes the final laid out grid of components and encodes it into blueprint form.
+		Other options may include a "preview" mode rendered in ascii.
+		This stage may be tricky and require reverse engineering work, but there's
+		prior art to draw from.
+
+Invariants to simplify primitives:
+	Inputs always arrive on right-facing belts at the top-left corner,
+	
+	Order of inputs is indeterminate.
