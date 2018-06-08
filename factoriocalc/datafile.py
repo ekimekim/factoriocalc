@@ -23,6 +23,7 @@ ResolvedRecipe = namedtuple("ResolvedRecipe", [
 	"throughput", # adjusted for building's speed and productivity
 	"inputs", # adjusted for building's productivity
 	"mods", # list of names of modules in the building
+	"beacons", # total speed effect of beacons on the building
 ])
 
 Building = namedtuple("Building", [
@@ -162,6 +163,7 @@ class Datafile(object):
 			throughput = recipe.throughput * speed * prod,
 			inputs = {k: v / prod for k, v in recipe.inputs.items()},
 			mods = modlist,
+			beacons = beacon_speed,
 		)
 
 	def calc_mods(self, recipe, priorities, beacon_speed):

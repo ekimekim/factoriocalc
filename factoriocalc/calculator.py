@@ -13,10 +13,12 @@ from fractions import Fraction
 class Process(object):
 	"""A process represents the total production of a particular item.
 	Attrs:
+		item - the item name
 		recipe - the ResolvedRecipe for the item, or None for raw inputs
 		throughput - the rate at which the item must be produced
 	"""
-	def __init__(self, recipe, throughput):
+	def __init__(self, item, recipe, throughput):
+		self.item = item
 		self.recipe = recipe
 		self.throughput = throughput
 
@@ -34,36 +36,64 @@ class Process(object):
 		}
 
 
+def merge_into(a, b):
+	for k, v in b.items():
+		if k in a:
+			assert a[k].recipe == v.recipe
+			a[k].throughput += v.throughput
+		else:
+			a[k] = v
+
+
 class Calculator(object):
 	"""The calculator is concerned with working out what items are required
 	to produce a desired product, and in what quantities, along with how many
 	buildings are required to produce that quantity.
 	"""
-	def __init__(self, datafile):
-		self.datafile = datafile
+	DEFAULT_MODS = 'prod 3, prod 3, prod 3, prod 3, speed 3, speed 3, speed 3, speed 3'
 
-
-# TODO UPTO
-	def solve(item, throughput, stop_items):
-		"""Returns a dict {item: number of buildings needed producing that item}
-		such that the requested throughput of the input item can be produced.
-		Items which don't have a recipe are also included, but their value is the amount of items
-		per second needed as input, as is anything in stop_items.
+	def __init__(self, datafile, stop_items=[], module_priorities=DEFAULT_MODS, beacon_speed=0):
 		"""
-		if item not in recipes or item in stop_items:
-			# raw input, we represent it as one 'building' being one input per second
-			return {item: throughput}
-		_, per_building, inputs, _ = recipes[item]
-		buildings = throughput / per_building
-		# We use an ordered dict so later we can print items in dependency order
-		result = OrderedDict()
-		for name, amount in inputs.items():
+		datafile: The Datafile object to take recipes from.
+		stop_items: Items whose names are in this list will be treated as raw inputs,
+		            even if a recipe to make them exists.
+		module_priorities: A list of modules to use in priority order. See Datafile.calc_mods().
+		beacon_speed:
+			The total speed effect of beacons to use in each process.
+			Common values:
+				2 (+200%, for 4 beacons, ie. one row of beacons reachable by an assembler)
+				4 (+400%, for 8 becaons, ie. two rows of beacons reachable by an assember)
+		"""
+		self.datafile = datafile
+		self.stop_items = stop_items
+		self.module_priorities = module_priorities
+		self.beacon_speed = beacon_speed
+
+
+	def solve(self, item, throughput):
+		"""Returns a dict {item: Process(recipe, throughput)}
+		such that the requested throughput of the input item can be produced.
+		"""
+		if item not in self.datafile.recipes or item in stop_items:
+			# raw input
+			return {item: Process(item, None, throughput)}
+		recipe = self.datafile.recipes[item]
+		recipe = self.datafile.resolve_recipe(recipe, self.module_priorities, self.beacon_speed)
+		result = {item: Process(item, recipe, throughput)}
+		for name, amount in recipe.inputs.items():
 			amount *= throughput
-			subresult = solve(recipes, name, amount, stop_items)
+			subresult = self.solve(name, amount)
 			merge_into(result, subresult)
-		merge_into(result, {item: buildings})
 		return result
 
+	def solve_all(self, recipes, items):
+		"""Solve for all the given items in form {item: desired throughput}. Output as per solve()"""
+		results = {}
+		for item, throughput in items.items():
+			merge_into(results, self.solve(item, throughput))
+		return results
+
+# UPTO
 
 	def solve_oil(recipes, targets):
 		"""Special case solver for standard oil products calculations.
@@ -177,13 +207,6 @@ class Calculator(object):
 		return targets, further_inputs, buildings
 
 
-	def solve_all(recipes, items, stop_items):
-		"""Solve for all the given items in form {item: desired throughput}. Output as per solve()"""
-		results = OrderedDict()
-		for item, amount in items.items():
-			merge_into(results, solve(recipes, item, amount, stop_items))
-		return results
-
 
 	def solve_with_oil(recipes, items, stop_items):
 		"""As per solve_all, but follow it with a call to solve_oil to resolve any oil products.
@@ -192,11 +215,6 @@ class Calculator(object):
 		results, further_inputs, buildings = solve_oil(recipes, results)
 		merge_into(results, solve_all(recipes, further_inputs, stop_items))
 		return results, buildings
-
-
-	def merge_into(a, b):
-		for k, v in b.items():
-			a[k] = a.get(k, 0) + v
 
 
 	def main(items, rate, datafile='factorio_recipes', modules='prod 3, prod 3, prod 3, prod 3, speed 3, speed 3, speed 3, speed 3', fractional=False, log='WARNING',
