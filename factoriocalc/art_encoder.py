@@ -1,14 +1,15 @@
 # -encoding: utf-8-
 
+import functools
+
 # art formatters
 
 def boxed(c):
 	"""Creates a 3x3 box with char c in the middle"""
-	# TODO unicode boxart
 	return [
-		["/", "-", "\\"],
-		["|", c, "|"],
-		["\\", "-", "/"],
+		["┌", "─", "┐"],
+		["│",   c, "│"],
+		["└", "─", "┘"],
 	],
 
 def forecolor(content, color=8, bold=False):
