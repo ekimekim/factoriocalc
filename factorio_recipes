@@ -30,9 +30,12 @@ Rocket takes 341 in rocket silo, 1000 low density structure, 1000 rocket control
 # ie. all kinds of science and 60s per pack.
 Infinite science takes 60 in lab, 1 red science, 1 green science, 1 black science, 1 blue science, 1 purple science, 1 yellow science, 1 white science, can take productivity
 
-# Generic oil recipes, these hacks connect the oil solver to per-building effects like modules.
-Oil products takes 5 in Refinery, 1 dummy, can take productivity
-Oil cracking takes 3 in Chemical plant, 1 dummy, can take productivity
+# Oil recipes, the output items are dummy items resolved by solve_oil()
+# "Oil products" resolves to 10 heavy / 45 light / 55 petrol
+Oil products takes 5 in Refinery, 100 crude oil, 50 water, can take productivity
+# "oil cracking" resolves directly to the output type
+30 Heavy oil cracking takes 3 in Chemical plant, 40 heavy oil, 30 water, can take productivity
+20 Light oil cracking takes 3 in Chemical plant, 30 light oil, 30 water, can take productivity
 
 # Intermediate Products
 # Omitted: petroleum, light oil, heavy oil, all uranium products

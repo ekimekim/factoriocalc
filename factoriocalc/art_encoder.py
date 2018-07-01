@@ -20,14 +20,14 @@ def forecolor(content, color=8, bold=False):
 		color += ';1'
 	return '\x1b[{}m{}\x1b[m'.format(color, content)
 
-black = functools.partial(forecolor, 0)
-red = functools.partial(forecolor, 1)
-green = functools.partial(forecolor, 2)
-yellow = functools.partial(forecolor, 3)
-blue = functools.partial(forecolor, 4)
-purple = functools.partial(forecolor, 5)
-cyan = functools.partial(forecolor, 6)
-white = functools.partial(forecolor, 7)
+black = functools.partial(forecolor, color=0)
+red = functools.partial(forecolor, color=1)
+green = functools.partial(forecolor, color=2)
+yellow = functools.partial(forecolor, color=3)
+blue = functools.partial(forecolor, color=4)
+purple = functools.partial(forecolor, color=5)
+cyan = functools.partial(forecolor, color=6)
+white = functools.partial(forecolor, color=7)
 bold = functools.partial(forecolor, bold=True)
 
 class ArtEncoder(object):

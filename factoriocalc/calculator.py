@@ -1,12 +1,4 @@
 
-import logging
-import math
-import os
-import re
-import sys
-from collections import OrderedDict, Counter
-from pprint import pformat
-
 from fractions import Fraction
 
 
@@ -34,6 +26,22 @@ class Process(object):
 			k: v * self.throughput
 			for k, v in self.recipe.inputs.items()
 		}
+
+	def depends(self):
+		"""Returns the set of items this process depends on, ie. its parents
+		in the DAG of processes."""
+		return set() if self.recipe is None else set(self.recipe.inputs.keys())
+
+
+class ProcessWithExtraDeps(object):
+	"""Process with extra dependencies besides its inputs, used to make oil processing
+	work in the correct order despite lacking explicit input links."""
+	def __init__(self, item, recipe, throughput, *deps):
+		super(OilProductProcess, self).__init__(item, recipe, throughput)
+		self.extra_deps = set(deps)
+
+	def depends(self):
+		return super(OilProductProcess, self) | self.extra_deps
 
 
 def merge_into(a, b):
@@ -69,9 +77,8 @@ class Calculator(object):
 		self.module_priorities = module_priorities
 		self.beacon_speed = beacon_speed
 
-
 	def solve(self, item, throughput):
-		"""Returns a dict {item: Process(recipe, throughput)}
+		"""Returns a dict {item: Process(item, recipe, throughput)}
 		such that the requested throughput of the input item can be produced.
 		"""
 		if item not in self.datafile.recipes or item in stop_items:
@@ -86,26 +93,25 @@ class Calculator(object):
 			merge_into(result, subresult)
 		return result
 
-	def solve_all(self, recipes, items):
+	def solve_all(self, items):
 		"""Solve for all the given items in form {item: desired throughput}. Output as per solve()"""
 		results = {}
 		for item, throughput in items.items():
 			merge_into(results, self.solve(item, throughput))
 		return results
 
-# UPTO
-
-	def solve_oil(recipes, targets):
+	def solve_oil(self, processes):
 		"""Special case solver for standard oil products calculations.
 		We use a hack to integrate this calculation with existing features
-		around modules, beacon speed, etc. Recipes should contain a dummy
-		'oil products' product built in a refinery which produces 1 output in 5 seconds
-		(currently, all oil recipes take 5 seconds to complete).
-		It should also contain a dummy recipe 'oil cracking' built by a chemical plant in 3 seconds.
-		Both recipes should take "1 dummy" as input so that productivity effects can be accounted.
-		Targets should be a dict output from solve.
-		A modified dict will be returned with the oil products removed, a second with any inputs required,
-		along with a list of tuples [(dummy recipe name, oil recipe name, number of buildings)].
+		around modules, beacon speed, etc. Recipes should contain a
+		'oil products' product built in a refinery which produces 1 output
+		and otherwise has the features of Advanced Oil Processing.
+		It should also contain oil cracking recipes.
+		Processes should be a dict of processes as returned by solve().
+		A modified processes dict will be returned, with the oil products mapping
+		to an 'oil products' process, along with any cracking processes.
+		Additionally, a dict {item: throughput} is returned detailing any additional inputs
+		to be solved for.
 
 		For clarity, these are the recipes considered:
 			adv oil processing: 100c+50w -> 10h+45l+55p
@@ -118,51 +124,53 @@ class Calculator(object):
 		# TODO this is off. cracker amounts aren't being calculated correctly, though they're almost right?
 		# sigh, it's a clusterfuck.
 
-		def p(s, *a, **k):
-			logging.debug(s.format(*a, **k))
+		# Also beacon speed should be counted differently for refineries as they can
+		# have more in range
 
 		HEAVY_PER_PROCESS, LIGHT_PER_PROCESS, PETROL_PER_PROCESS = 10, 45, 55
-		PROCESS_INPUTS = {"crude oil": 100, "water": 50}
-		HEAVY_LIGHT_IN, HEAVY_LIGHT_OUT = 40, 30
-		LIGHT_PETROL_IN, LIGHT_PETROL_OUT = 30, 20
-		HEAVY_LIGHT_INPUTS = {"water": 30}
-		LIGHT_PETROL_INPUTS = {"water": 30}
 
-		_, refinery_throughput, dummy, _ = recipes['oil products']
-		refinery_input_factor = dummy['dummy']
-		_, cracking_throughput, dummy, _ = recipes['oil cracking']
-		cracking_input_factor = dummy['dummy']
-
-		light_per_heavy = HEAVY_LIGHT_OUT / Fraction(HEAVY_LIGHT_IN * cracking_input_factor)
-		petrol_per_light = LIGHT_PETROL_OUT / Fraction(LIGHT_PETROL_IN * cracking_input_factor)
-		petrol_per_process = PETROL_PER_PROCESS / Fraction(refinery_input_factor)
-		light_per_process = LIGHT_PER_PROCESS / Fraction(refinery_input_factor)
-		heavy_per_process = HEAVY_PER_PROCESS / Fraction(refinery_input_factor)
+		refinery_recipe = self.datafile.recipes['oil products']
+		refinery_recipe = self.datafile.resolve_recipe(refinery_recipe, self.module_priorities, self.beacon_speed)
+		heavy_crack_recipe = self.datafile.cracking_recipes['heavy oil cracking']
+		heavy_crack_recipe = self.datafile.resolve_recipe(heavy_crack_recipe, self.module_priorities, self.beacon_speed)
+		light_crack_recipe = self.datafile.cracking_recipes['light oil cracking']
+		light_crack_recipe = self.datafile.resolve_recipe(light_crack_recipe, self.module_priorities, self.beacon_speed)
+		light_per_heavy = Fraction(1) / heavy_crack_recipe.inputs['heavy oil']
+		petrol_per_light = Fraction(1) / light_crack_recipe.inputs['light oil']
 
 		excesses = {}
-		heavy_cracking = 0 # measured in how many refinery processes' of heavy we need to crack
-		light_cracking = 0 # as above
+		heavy_cracking = 0 # measured in how much light oil to produce
+		light_cracking = 0 # measured in how much petroleum to produce
+		oil_processing = 0 # measured in number of completed Advanced Oil Processing processes per second
+
+		heavy_oil_needed = processes.pop('heavy oil').throughput if 'heavy oil' in processes else 0
+		light_oil_needed = processes.pop('light oil').throughput if 'light oil' in processes else 0
+		petroleum_needed = processes.pop('petroleum').throughput if 'petroleum' in processes else 0
+
 		# since we have no other way of getting more heavy oil, we consider it first
 		# to get an absolute minimum.
-		heavy_throughput = refinery_throughput * heavy_per_process
-		refineries = targets.pop('heavy oil', 0) / Fraction(heavy_throughput)
-		p('from heavy oil targets: {} refineries', refineries)
+		oil_processing = Fraction(heavy_oil_needed) / HEAVY_PER_PROCESS
+
 		# now, we assume any additional heavy becomes light oil, and calculate what we need for
 		# light with that in mind. We also take into account any light oil we're already making.
-		extra_light = targets.pop('light oil', 0) - refineries * refinery_throughput * light_per_process
+		extra_light = light_oil_needed - oil_processing * LIGHT_PER_PROCESS
 		if extra_light < 0:
-			p('got excess {} light from heavy targets', -extra_light)
 			excesses['light oil'] = extra_light
 		else:
-			light_throughput = refinery_throughput * (light_per_process + heavy_per_process * light_per_heavy)
-			refineries_for_light = extra_light / Fraction(light_throughput)
-			heavy_cracking += refineries_for_light
-			refineries += refineries_for_light
-			p('from extra {} light oil targets: {} refineries and crackers', extra_light, refineries_for_light)
+			# with cracking, how much light do we get per process
+			total_light_per_process = LIGHT_PER_PROCESS + HEAVY_PER_PROCESS * light_per_heavy
+			# this means we need this many extra processes per sec
+			processing_for_light = extra_light / total_light_per_process
+			# how much of that came from cracking?
+			light_from_cracking = extra_light - processing_for_light * LIGHT_PER_PROCESS
+
+			# add to totals
+			oil_processing += processing_for_light
+			heavy_cracking += light_from_cracking
+
 		# then we do the same for petroleum, assuming all heavy + light is getting cracked
-		extra_petrol = targets.pop('petroleum', 0) - refineries * refinery_throughput * petrol_per_process
+		extra_petrol = petroleum_needed - oil_processing * PETROL_PER_PROCESS
 		if extra_petrol < 0:
-			p('got excess {} petrol from earlier targets', -extra_petrol)
 			excesses['petroleum'] = extra_petrol
 		else:
 			# first, try to resolve the petrol shortfall by cracking any excess light oil
@@ -170,158 +178,54 @@ class Calculator(object):
 			if petrol_available > extra_petrol:
 				# we can make up for the shortfall entirely
 				excesses['light oil'] += extra_petrol / petrol_per_light
-				new_light_cracking = refinery_throughput * extra_petrol
-				light_cracking += new_light_cracking
-				p('used {} excess light to make up extra {} petrol needed with {} crackers', extra_petrol / petrol_per_light, extra_petrol, new_light_cracking)
+				light_cracking += extra_petrol
 			else:
+				# we make up for the shortfall as much as we can
 				extra_petrol -= petrol_available
-				new_light_cracking = refinery_throughput * petrol_available
-				light_cracking += new_light_cracking
-				p('used {} excess light to help make up extra {} petrol needed with {} crackers', -excesses.get('light oil', 0), petrol_available, new_light_cracking)
+				light_cracking += petrol_available
 				excesses.pop('light oil', None)
-				petrol_throughput = refinery_throughput * (
-					petrol_per_process + petrol_per_light * (
-						light_per_process + heavy_per_process * light_per_heavy
-					)
+
+				# we handle the rest by adding more oil processing, and cracking everything.
+				# when cracking everything down to petrol, how much do we get per process?
+				total_petrol_per_process = PETROL_PER_PROCESS + petrol_per_light * (
+					LIGHT_PER_PROCESS + light_per_heavy * HEAVY_PER_PROCESS
 				)
-				refineries_for_petrol = extra_petrol / Fraction(petrol_throughput)
-				heavy_cracking += refineries_for_petrol
-				light_cracking += refineries_for_petrol
-				refineries += refineries_for_petrol
-				p('from extra {} petrol targets: {} refineries and crackers', extra_petrol, refineries_for_petrol)
-		# now we calculate inputs, include excesses, and build the outputs.
-		heavy_crackers = heavy_cracking * refinery_throughput * heavy_per_process / Fraction(HEAVY_LIGHT_IN * cracking_throughput)
-		light_crackers = light_cracking * refinery_throughput * (light_per_process + heavy_per_process * light_per_heavy) / Fraction(LIGHT_PETROL_IN * cracking_throughput)
-		merge_into(targets, excesses)
-		buildings = []
-		further_inputs = OrderedDict()
-		if light_crackers:
-			merge_into(further_inputs, {k: v * light_crackers * cracking_throughput for k, v in LIGHT_PETROL_INPUTS.items()})
-			buildings.append(('oil cracking', 'Light Oil Cracking', light_crackers))
-		if heavy_crackers:
-			merge_into(further_inputs, {k: v * heavy_crackers * cracking_throughput for k, v in HEAVY_LIGHT_INPUTS.items()})
-			buildings.append(('oil cracking', 'Heavy Oil Cracking', heavy_crackers))
-		if refineries:
-			merge_into(further_inputs, {k: v * refineries * refinery_throughput for k, v in PROCESS_INPUTS.items()})
-			buildings.append(('oil products', 'Advanced Oil Processing', refineries))
-		return targets, further_inputs, buildings
+				# that means we need this many extra processes per sec
+				processing_for_petrol = extra_petrol / total_petrol_per_process
+				# how much of that came from light cracking?
+				petrol_from_cracking = extra_petrol - processing_for_petrol * PETROL_PER_PROCESS
+				# and how much of the light for cracking came from heavy cracking?
+				light_to_crack = petrol_from_cracking / petrol_per_light
+				light_from_cracking = light_to_crack - processing_for_petrol * LIGHT_PER_PROCESS
 
+				# add to totals
+				oil_processing += processing_for_petrol
+				heavy_cracking += light_from_cracking
+				light_cracking += petrol_from_cracking
 
+		# now we build the outputs.
+		# note the 'raw inputs' for heavy/light/petrol are replaced by similar Processes,
+		# but with an extra dep on 'oil products' and any cracking that produces it.
+		new_processes = [
+			Process('oil products', refinery_recipe, oil_processing),
+			Process('heavy oil cracking', heavy_crack_recipe, heavy_cracking),
+			Process('light oil cracking', light_crack_recipe, light_cracking),
+			ProcessWithExtraDeps('heavy oil', None, oil_processing * HEAVY_PER_PROCESS, 'oil products'),
+			ProcessWithExtraDeps('light oil', None, oil_processing * LIGHT_PER_PROCESS, 'oil products', 'heavy oil cracking'),
+			ProcessWithExtraDeps('petroleum', None, oil_processing * PETROL_PER_PROCESS, 'oil products', 'light oil cracking'),
+		]
+		new_processes = {p.item: p for p in processes if p.throughput}
+		new_inputs = excesses
+		for process in new_processes.values():
+			merge_into(new_inputs, process.inputs())
+		merge_into(processes, new_processes)
 
-	def solve_with_oil(recipes, items, stop_items):
+		return processes, new_inputs
+
+	def solve_with_oil(self, items):
 		"""As per solve_all, but follow it with a call to solve_oil to resolve any oil products.
 		It returns (results, buildings) as per solve_oil()"""
-		results = solve_all(recipes, items, stop_items)
-		results, further_inputs, buildings = solve_oil(recipes, results)
-		merge_into(results, solve_all(recipes, further_inputs, stop_items))
+		results = self.solve_all(items)
+		results, further_inputs, buildings = self.solve_oil(results)
+		merge_into(results, self.solve_all(further_inputs))
 		return results, buildings
-
-
-	def main(items, rate, datafile='factorio_recipes', modules='prod 3, prod 3, prod 3, prod 3, speed 3, speed 3, speed 3, speed 3', fractional=False, log='WARNING',
-			 stop_at='', beacon_speed=0., oil=False, verbose=False):
-		"""Calculate ratios and output number of production facilities needed
-		to craft a specific output at a specific rate in Factorio.
-		Requires a data file specifying available recipies and buildings. See source for syntax.
-		Defaults to a file 'factorio_recipes' in the current directory.
-
-		Item may be a single item, or a comma-seperated list.
-
-		Rate should be expressed in decimal items per second.
-
-		Modules to use can be given as a comma-seperated list, and should list priority order for
-		what modules should go in a building, with repeats for more than one of the same kind.
-		For example, an input like --modules='prod 1, prod 1, speed 1' will only put a speed module in
-		buildings with more than 2 slots.
-
-		stop-at can be given as a list of items to stop breaking down at, ie. to treat them as raw inputs.
-
-		beacon-speed can be given to apply a presumed global speed bonus regardless of building modules.
-		For example, to model 8 beacons in range of each building, with each beacon full of speed 3s,
-		you would use 8 * .5 = 4, and all buildings would act as having a speed bonus of 400%.
-
-		By default, oil processing is not considered (see limitations). However, oil can be considered
-		by including the --oil option. This may become default in the future.
-
-		Give --inputs-visible option to also include recipe inputs for each step. Useful for logistic planning.
-
-		Limitations:
-			- Can't know more than one recipe per unique output item (eg. different ways to make Solid Fuel)
-			- Can't build recipe in multiple building types (eg. Assembly Machine 1/2/3)
-			- Recipes can't have more than one output (eg. oil processing)
-			- No dependency cycles (eg. coal liquification, Kovarex enrichment)
-		"""
-		logging.basicConfig(level=log.upper())
-
-		items = [item.strip().lower() for item in items.split(',')]
-		modules = [name.strip().lower() for name in modules.split(',')] if modules else []
-		stop_items = [item.strip().lower() for item in stop_at.split(',')] if stop_at else []
-		recipes = get_recipes(datafile, modules, beacon_speed)
-		rate = Fraction(rate)
-		items = OrderedDict((item, rate) for item in items)
-		if oil:
-			results, oil_buildings = solve_with_oil(recipes, items, stop_items)
-		else:
-			results = solve_all(recipes, items, stop_items)
-			oil_buildings = []
-
-		def maybe_round(amount):
-			return '{:.2f}'.format(float(amount)) if fractional else int(math.ceil(amount))
-
-		def mods_str(mods):
-			return ' with {}'.format(', '.join(
-				'{}x {}'.format(count, name)
-				for name, count in sorted(
-					Counter(mods).items(), key=lambda (name, count): (count, name)
-				)
-			)) if mods else ''
-
-		def input_str(throughput, inputs):
-			if not verbose or not inputs:
-				return ''
-			return ' using {}'.format(
-				', '.join(
-					'{:.2f}/sec {}'.format(float(throughput * item_amount), item)
-					for item, item_amount in inputs.items()
-				)
-			)
-
-		def format_extra(building, amount, throughput, mods, item, inputs):
-			MAX_PER_ROW = 40 # one blue belt
-			EXCLUDE = ['water', 'crude oil', 'petroleum', 'light oil', 'heavy oil', 'sulfuric acid', 'lubricant']
-			to_consider = [
-				throughput * item_amount
-				for _item, item_amount in inputs.items()
-				if _item not in EXCLUDE
-			]
-			if item not in EXCLUDE:
-				to_consider.append(throughput)
-			rows = int(math.ceil(max(to_consider) / MAX_PER_ROW)) if to_consider else 1
-			if not verbose or rows == 1:
-				return ''
-			return '\n\tin {} rows of {} each producing {:.2f}/sec{}'.format(
-				rows, maybe_round(amount/rows), float(throughput / rows), input_str(throughput/rows, inputs),
-			)
-
-		def format_item(building, amount, throughput, mods, item, inputs):
-			return '{} {}{} producing {:.2f}/sec of {}{}{}'.format(
-				maybe_round(amount),
-				building, mods_str(mods), float(throughput), item, input_str(throughput, inputs),
-				format_extra(building, amount, throughput, mods, item, inputs),
-			)
-
-		for item, amount in results.items():
-			if item in recipes and item not in stop_items:
-				building, per_building, inputs, mods = recipes[item]
-				throughput = amount * per_building
-				print format_item(building, amount, throughput, mods, item, inputs)
-			else:
-				print '{:.2f}/sec of {}'.format(float(amount), item)
-		for recipe, name, amount in oil_buildings:
-			building, per_building, _, mods = recipes[recipe]
-			throughput = amount * per_building # this doesn't make much sense, it's completed processes per sec
-			print format_item(building, amount, throughput, mods, name, {})
-
-
-	if __name__ == '__main__':
-		import argh
-		argh.dispatch_command(main)
