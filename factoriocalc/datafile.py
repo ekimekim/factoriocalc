@@ -152,6 +152,15 @@ class Datafile(object):
 
 		return items, buildings, modules
 
+	def reresolve_recipe(self, recipe, beacon_speed):
+		"""Takes a resolved recipe and adjusts it to a new beacon speed.
+		This can be done without impacting total input/output amounts so it
+		doesn't affect other rows, making this suitable for specialising recipes
+		for particular layouts that only have a certain number of beacons built in."""
+		new = self.resolve_recipe(self.recipes[recipe.item], recipe.mods, beacon_speed)
+		assert new.mods == recipe.mods
+		assert new.inputs == recipe.inputs
+		return new
 
 	def resolve_recipe(self, recipe, module_priorities, beacon_speed=0):
 		"""Resolves a generic recipe into a concrete per-building value,

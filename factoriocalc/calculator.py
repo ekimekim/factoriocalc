@@ -3,7 +3,7 @@ from fractions import Fraction
 
 
 class Process(object):
-	"""A process represents the total production of a particular item.
+	"""A process represents the production of a particular item.
 	Attrs:
 		item - the item name
 		recipe - the ResolvedRecipe for the item, or None for raw inputs
@@ -229,3 +229,23 @@ class Calculator(object):
 		results, further_inputs, buildings = self.solve_oil(results)
 		merge_into(results, self.solve_all(further_inputs))
 		return results, buildings
+
+	def split_into_steps(self, processes):
+		"""Splits a dict of full processes into an unordered list of steps,
+		where each step uses no more than 1 belt for each input or output."""
+		LIQUIDS = [
+			'petroleum', 'light oil', 'heavy oil', 'sulfuric acid', 'lubricant', 'crude oil', 'water',
+			'oil products', 'light oil cracking', 'heavy oil cracking',
+		]
+		results = []
+		for process in processes.values():
+			steps = Fraction(math.ceil(max(
+				[
+					process.throughput * per_item / Fraction(40)
+					for input, per_item in process.recipe.inputs.items()
+					if input not in LIQUIDS
+				] + [1 if process.item in LIQUIDS else process.throughput / Fraction(40)]
+			)))
+			step = process._replace(throughput=process.throughput/steps)
+			results += [step] * steps
+		return results

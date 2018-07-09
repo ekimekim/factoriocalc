@@ -6,6 +6,10 @@ This sounds complex but can be broken into relatively simple stages:
 		Works out what processing is required and in what amounts,
 		outputting a DAG of processes.
 		This stage is pretty much already done.
+	splitter:
+		Splits full processes of each item into "steps",
+		where each step requires no more than 1 full belt of each input or output.
+		Outputs a DAG of steps.
 	belt manager:
 		Transforms the DAG of full processes into a sequence of steps,
 		each of which takes inputs from specific belts and sends outputs to specific belts.
