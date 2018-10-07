@@ -1,7 +1,7 @@
 
-import math
-from collections import namedtuple
 from fractions import Fraction
+
+from .util import line_limit, is_liquid
 
 
 class Process(object):
@@ -253,56 +253,61 @@ class Calculator(object):
 		merge_processes_into(results, self.solve_all(further_inputs))
 		return results
 
-	def split_into_steps(self, processes):
-		"""Splits a dict of full processes into an unordered list of steps,
-		where each step uses no more than 1 belt for each input or output.
-		To prevent balance issues, all but the final step is maximised, ie.
-		scaled to the point that one or more inputs or outputs is running at exactly
-		40 items/sec.
-		Since raw inputs aren't really a "step", it returns them seperately and does not split them.
-		It is up to the caller to split the inputs by whatever means and provide the split
-		as initial conditions to the belt manager.
-		Returns (steps, inputs)
-		"""
-		LIQUIDS = [
-			'petroleum', 'light oil', 'heavy oil', 'sulfuric acid', 'lubricant', 'crude oil', 'water',
-			'oil products', 'light oil cracking', 'heavy oil cracking',
-		]
-		def limit(item):
-			if item in LIQUIDS:
-				# 17/tick for pipe lengths up to 166 long. This is a conservative
-				# limit that just means I don't need to worry about it.
-				return Fraction(17*60)
-			return Fraction(40) # full blue belt
 
-		results = []
-		inputs = []
-		for process in processes.values():
-			if not process.depends():
-				# If something has no dependencies, it's a raw input
-				inputs.append(process)
-				continue
-			if not (process.inputs() or process.outputs()):
-				# Dummy process. Pass through as a single step.
-				results.append(process)
-				continue
-			steps = max(
-				[
-					throughput / limit(item)
-					for item, throughput in process.inputs().items()
-				] + [
-					throughput / limit(item)
-					for item, throughput in process.outputs().items()
-				]
-			)
-			# note steps is fractional. by dividing original throughput by perfect number of steps,
-			# each such step would be maximal - the problem is there would need to be a fractional
-			# step at the end. So we put down floor(steps) maximal steps, followed by a step
-			# scaled down to represent the fractional step.
-			whole_steps, leftover = divmod(steps, 1)
-			maximal_step = process.rescale(process.throughput / steps)
-			fractional_step = maximal_step.rescale(maximal_step.throughput * leftover)
-			results += [maximal_step] * whole_steps
-			if leftover:
-				results.append(fractional_step)
-		return results, inputs
+def split_into_steps(processes, input_limit=None, input_liquid_limit=None):
+	"""Splits a dict of full processes into an unordered list of steps,
+	where each step uses no more than 1 belt for each input or output.
+	To prevent balance issues, all but the final step is maximised, ie.
+	scaled to the point that one or more inputs or outputs is running at exactly
+	40 items/sec.
+	Since raw inputs aren't really a "step", it returns them seperately.
+	Inputs are optionally split by lower limits input_limit and input_liquid_limit.
+	Returns (steps, inputs)
+	"""
+	def limit(item, input=False):
+		if input and is_liquid(item) and input_liquid_limit is not None:
+			return input_liquid_limit
+		elif input and not is_liquid(item) and input_limit is not None:
+			return input_limit
+		else:
+			return line_limit(item)
+
+	results = []
+	inputs = []
+	for process in processes.values():
+		# If something has no dependencies, it's a raw input
+		is_input = not process.depends()
+
+		if (not is_input) and not (process.inputs() or process.outputs()):
+			# Dummy process. Pass through as a single step.
+			results.append(process)
+			continue
+
+		steps = max(
+			[
+				throughput / limit(item, is_input)
+				for item, throughput in process.inputs().items()
+			] + [
+				throughput / limit(item, is_input)
+				for item, throughput in process.outputs().items()
+			]
+		)
+
+		# note steps is fractional. by dividing original throughput by perfect number of steps,
+		# each such step would be maximal - the problem is there would need to be a fractional
+		# step at the end. So we put down floor(steps) maximal steps, followed by a step
+		# scaled down to represent the fractional step.
+		whole_steps, leftover = divmod(steps, 1)
+		maximal_step = process.rescale(process.throughput / steps)
+		fractional_step = maximal_step.rescale(maximal_step.throughput * leftover)
+
+		part = [maximal_step] * whole_steps
+		if leftover:
+			part.append(fractional_step)
+
+		if is_input:
+			inputs += part
+		else:
+			results += part
+
+	return results, inputs

@@ -2,7 +2,8 @@
 from fractions import Fraction
 
 from .datafile import Datafile
-from .calculator import Calculator
+from .calculator import Calculator, split_into_steps
+from .beltmanager import BeltManager
 
 
 def format_namedtuple(x):
@@ -40,10 +41,14 @@ def main(items, data_path='./factorio_recipes', stop_items=''):
 		print "{}: {}".format(name, process)
 
 	print "=== Step breakdown stage ==="
-	steps, inputs = calculator.split_into_steps(processes)
+	steps, inputs = split_into_steps(processes)
 	print "Inputs:"
 	for process in inputs:
 		print process
 	print "Steps:"
 	for process in steps:
 		print process
+
+#	print "=== Belt manager stage ==="
+#	inputs = 
+#	manager = BeltManager(steps, inputs)
