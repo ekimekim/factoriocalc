@@ -187,7 +187,7 @@ class BeltManager(object):
 		if new.throughput == 0:
 			new = None
 		self.bus[num] = new
-		if self.bus[-1] is None:
+		while self.bus and self.bus[-1] is None:
 			self.bus.pop()
 
 	def add_line(self, item, throughput):
