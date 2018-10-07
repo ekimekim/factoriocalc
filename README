@@ -49,3 +49,25 @@ Invariants to simplify primitives:
 	Inputs always arrive on right-facing belts at the top-left corner,
 	
 	Order of inputs is indeterminate.
+
+
+Notes on balance:
+	to prevent one side getting taken from and one side not which can result in a merge
+	between two lopsided belts only having an effective throughput of 20/sec instead of 40/sec,
+	we need to balance sides after every offramp.
+
+	each row of the bus, if unused that step, looks like this: (left is top, right is bottom):
+		>      <
+	if we offramped, it can look like this:
+		s>|  <s\
+		S=/   s=
+	and we specify that consumers must preference the left side.
+
+	alternately, we can balance during compaction.
+	that's simpler for now.
+	Though we still need to specify consumption from the left.
+	eg.
+		 |  |    
+		>| s/  <
+		 \sS\   
+		==S=====

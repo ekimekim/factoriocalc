@@ -3,7 +3,15 @@ from fractions import Fraction
 
 from .datafile import Datafile
 from .calculator import Calculator, split_into_steps
-from .beltmanager import BeltManager
+from .beltmanager import BeltManager, Placement, Compaction
+
+
+def format_bus(bus):
+	return ', '.join(
+		"{:.2f}/sec {}".format(float(line.throughput), line.item)
+		if line is not None else "-"
+		for line in bus
+	)
 
 
 def main(items, data_path='./factorio_recipes', stop_items=''):
@@ -45,6 +53,20 @@ def main(items, data_path='./factorio_recipes', stop_items=''):
 	print "=== Belt manager stage ==="
 	manager = BeltManager(steps, inputs)
 	manager.run()
-	print "Final bus:", manager.bus
 	for step in manager.output:
-		print step
+		print "Bus: {}".format(format_bus(step.bus))
+		if isinstance(step, Placement):
+			print "{}: {} -> {}".format(
+				step.process,
+				", ".join(map(str, sorted(step.inputs.keys()))),
+				", ".join(map(str, sorted(step.outputs.keys()))),
+			)
+		elif isinstance(step, Compaction):
+			print "Compact {}".format(", ".join([
+				"{} into {}".format(s, d) for d, s in step.compactions
+			] + [
+				"{} becomes {}".format(s, d) for s, d in step.shifts
+			]))
+		else:
+			print step
+	print "Bus: {}".format(format_bus(manager.bus))

@@ -52,7 +52,9 @@ class BeltManager(object):
 			self.pending.remove(step)
 			self.add_step(step)
 		else:
+			bus = list(self.bus)
 			self.compact()
+			assert bus != self.bus
 
 	def find_candidates(self):
 		"""Return a list of steps which could be done right now"""
@@ -130,7 +132,12 @@ class BeltManager(object):
 				continue
 			candidates = [
 				(i, line) for i, line in enumerate(self.bus)
-				if line.item == source.item and line.throughput < line_limit(line.item)
+				if (
+					i != position
+					and line is not None
+					and line.item == source.item
+					and line.throughput < line_limit(line.item)
+				)
 			]
 			if not candidates:
 				position -= 1
@@ -166,7 +173,7 @@ class BeltManager(object):
 		"""
 		return [
 			(i, line) for i, line in enumerate(self.bus)
-			if line.item == input and line.throughput >= throughput
+			if line is not None and line.item == input and line.throughput >= throughput
 		]
 
 	def line_take(self, num, throughput):
