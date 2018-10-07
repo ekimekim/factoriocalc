@@ -6,13 +6,6 @@ from .calculator import Calculator, split_into_steps
 from .beltmanager import BeltManager
 
 
-def format_namedtuple(x):
-	return '{}({})'.format(
-		type(x).__name__,
-		', '.join('{}={!r}'.format(k, v) for k, v in x._asdict().items()),
-	)
-
-
 def main(items, data_path='./factorio_recipes', stop_items=''):
 
 	_items = {}
@@ -49,6 +42,9 @@ def main(items, data_path='./factorio_recipes', stop_items=''):
 	for process in steps:
 		print process
 
-#	print "=== Belt manager stage ==="
-#	inputs = 
-#	manager = BeltManager(steps, inputs)
+	print "=== Belt manager stage ==="
+	manager = BeltManager(steps, inputs)
+	manager.run()
+	print "Final bus:", manager.bus
+	for step in manager.output:
+		print step
