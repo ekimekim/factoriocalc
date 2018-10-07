@@ -5,6 +5,13 @@ from .datafile import Datafile
 from .calculator import Calculator
 
 
+def format_namedtuple(x):
+	return '{}({})'.format(
+		type(x).__name__,
+		', '.join('{}={!r}'.format(k, v) for k, v in x._asdict().items()),
+	)
+
+
 def main(items, data_path='./factorio_recipes', stop_items=''):
 
 	_items = {}
@@ -26,6 +33,17 @@ def main(items, data_path='./factorio_recipes', stop_items=''):
 		beacon_speed=4, # double-row of beacons
 		oil_beacon_speed=6, # double-row of beacons
 	)
+
+	print "=== Calculator stage ==="
 	processes = calculator.solve_with_oil(items)
-	steps = calculator.split_into_steps(processes)
-	print steps
+	for name, process in processes.items():
+		print "{}: {}".format(name, process)
+
+	print "=== Step breakdown stage ==="
+	steps, inputs = calculator.split_into_steps(processes)
+	print "Inputs:"
+	for process in inputs:
+		print process
+	print "Steps:"
+	for process in steps:
+		print process

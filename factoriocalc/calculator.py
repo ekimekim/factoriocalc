@@ -1,5 +1,6 @@
 
 import math
+from collections import namedtuple
 from fractions import Fraction
 
 
@@ -22,8 +23,8 @@ class Process(object):
 
 	def inputs(self):
 		"""Returns {item: throughput required} for each input item,
-		or None for raw inputs"""
-		return None if self.recipe is None else {
+		or {} for raw inputs"""
+		return {} if self.recipe is None else {
 			k: v * self.throughput
 			for k, v in self.recipe.inputs.items()
 		}
@@ -31,10 +32,20 @@ class Process(object):
 	def depends(self):
 		"""Returns the set of items this process depends on, ie. its parents
 		in the DAG of processes."""
-		return set() if self.recipe is None else set(self.recipe.inputs.keys())
+		return set(self.inputs().keys())
+
+	def rescale(self, new_throughput):
+		"""Return a new Process with a modified throughput"""
+		return type(self)(self.item, self.recipe, new_throughput)
+
+	def __str__(self):
+		return "<{cls.__name__}: {throughput:.2f}/sec of {self.item}>".format(
+			cls=type(self), self=self, throughput=float(self.throughput)
+		)
+	__repr__ = __str__
 
 
-class ProcessWithExtraDeps(object):
+class ProcessWithExtraDeps(Process):
 	"""Process with extra dependencies besides its inputs, used to make oil processing
 	work in the correct order despite lacking explicit input links."""
 	def __init__(self, item, recipe, throughput, *deps):
@@ -43,6 +54,9 @@ class ProcessWithExtraDeps(object):
 
 	def depends(self):
 		return super(ProcessWithExtraDeps, self) | self.extra_deps
+
+	def rescale(self, new_throughput):
+		return type(self)(self.item, self.recipe, self.throughput, *self.extra_deps)
 
 
 def merge_into(a, b):
@@ -59,7 +73,7 @@ class Calculator(object):
 	to produce a desired product, and in what quantities, along with how many
 	buildings are required to produce that quantity.
 	"""
-	DEFAULT_MODS = 'prod 3, prod 3, prod 3, prod 3, speed 3, speed 3, speed 3, speed 3'
+	DEFAULT_MODS = ['prod 3'] * 4 + ['speed 3'] * 4
 
 	def __init__(self, datafile, stop_items=[], module_priorities=DEFAULT_MODS,
 	             beacon_speed=0, oil_beacon_speed=None):
@@ -132,9 +146,9 @@ class Calculator(object):
 
 		refinery_recipe = self.datafile.recipes['oil products']
 		refinery_recipe = self.datafile.resolve_recipe(refinery_recipe, self.module_priorities, self.oil_beacon_speed)
-		heavy_crack_recipe = self.datafile.cracking_recipes['heavy oil cracking']
+		heavy_crack_recipe = self.datafile.recipes['heavy oil cracking']
 		heavy_crack_recipe = self.datafile.resolve_recipe(heavy_crack_recipe, self.module_priorities, self.beacon_speed)
-		light_crack_recipe = self.datafile.cracking_recipes['light oil cracking']
+		light_crack_recipe = self.datafile.recipes['light oil cracking']
 		light_crack_recipe = self.datafile.resolve_recipe(light_crack_recipe, self.module_priorities, self.beacon_speed)
 		light_per_heavy = Fraction(1) / heavy_crack_recipe.inputs['heavy oil']
 		petrol_per_light = Fraction(1) / light_crack_recipe.inputs['light oil']
@@ -215,7 +229,7 @@ class Calculator(object):
 			ProcessWithExtraDeps('light oil', None, oil_processing * LIGHT_PER_PROCESS, 'oil products', 'heavy oil cracking'),
 			ProcessWithExtraDeps('petroleum', None, oil_processing * PETROL_PER_PROCESS, 'oil products', 'light oil cracking'),
 		]
-		new_processes = {p.item: p for p in processes if p.throughput}
+		new_processes = {p.item: p for p in new_processes if p.throughput}
 		new_inputs = excesses
 		for process in new_processes.values():
 			merge_into(new_inputs, process.inputs())
@@ -232,20 +246,41 @@ class Calculator(object):
 
 	def split_into_steps(self, processes):
 		"""Splits a dict of full processes into an unordered list of steps,
-		where each step uses no more than 1 belt for each input or output."""
+		where each step uses no more than 1 belt for each input or output.
+		To prevent balance issues, all but the final step is maximised, ie.
+		scaled to the point that one or more inputs or outputs is running at exactly
+		40 items/sec.
+		Since raw inputs aren't really a "step", it returns them seperately and does not split them.
+		It is up to the caller to split the inputs by whatever means and provide the split
+		as initial conditions to the belt manager.
+		Returns (steps, inputs)
+		"""
 		LIQUIDS = [
 			'petroleum', 'light oil', 'heavy oil', 'sulfuric acid', 'lubricant', 'crude oil', 'water',
 			'oil products', 'light oil cracking', 'heavy oil cracking',
 		]
 		results = []
+		inputs = []
 		for process in processes.values():
-			steps = Fraction(math.ceil(max(
+			if not process.depends():
+				# If something has no dependencies, it's a raw input
+				inputs.append(process)
+				continue
+			steps = max(
 				[
-					process.throughput * per_item / Fraction(40)
-					for input, per_item in process.recipe.inputs.items()
+					throughput / Fraction(40)
+					for input, throughput in process.inputs().items()
 					if input not in LIQUIDS
 				] + [1 if process.item in LIQUIDS else process.throughput / Fraction(40)]
-			)))
-			step = process._replace(throughput=process.throughput/steps)
-			results += [step] * steps
-		return results
+			)
+			# note steps is fractional. by dividing original throughput by perfect number of steps,
+			# each such step would be maximal - the problem is there would need to be a fractional
+			# step at the end. So we put down floor(steps) maximal steps, followed by a step
+			# scaled down to represent the fractional step.
+			whole_steps, leftover = divmod(steps, 1)
+			maximal_step = process.rescale(process.throughput / steps)
+			fractional_step = maximal_step.rescale(maximal_step.throughput * leftover)
+			results += [maximal_step] * whole_steps
+			if leftover:
+				results.append(fractional_step)
+		return results, inputs

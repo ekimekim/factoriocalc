@@ -125,7 +125,7 @@ class Datafile(object):
 							inputs[input_name] = input_amount / amount
 					if name in items:
 						raise ValueError('Recipe for {!r} already declared'.format(name))
-					items[name] = Recipe(name, amount / time, building, inputs, prod)
+					items[name] = Recipe(name, building, amount / time, inputs, prod)
 					continue
 
 				match = re.match('^([^,]+) module affects speed ([^,]+)(?:, prod ([^,]+))?$', line)
@@ -189,12 +189,12 @@ class Datafile(object):
 		prod_total = 0
 		to_consider = list(priorities)
 		while len(used) < recipe.building.mod_slots and to_consider:
-			mod = to_consider.pop(0)
-			speed, prod = self.modules[mod]
-			if prod and not recipe.can_prod:
+			name = to_consider.pop(0)
+			module = self.modules[name]
+			if module.prod and not recipe.can_prod:
 				continue
-			speed_total += speed
-			prod_total += prod
-			used.append(mod)
+			speed_total += module.speed
+			prod_total += module.prod
+			used.append(name)
 
 		return recipe.building.speed * (1 + speed_total), 1 + prod_total, used
