@@ -53,19 +53,26 @@ class ProcessWithExtraDeps(Process):
 		self.extra_deps = set(deps)
 
 	def depends(self):
-		return super(ProcessWithExtraDeps, self) | self.extra_deps
+		return super(ProcessWithExtraDeps, self).depends() | self.extra_deps
 
 	def rescale(self, new_throughput):
 		return type(self)(self.item, self.recipe, self.throughput, *self.extra_deps)
 
 
-def merge_into(a, b):
+def merge_processes_into(a, b):
+	"""Merge a dict {item: Process} into another"""
 	for k, v in b.items():
 		if k in a:
 			assert a[k].recipe == v.recipe
 			a[k].throughput += v.throughput
 		else:
 			a[k] = v
+
+
+def merge_into(a, b):
+	"""Update a, adding values from b."""
+	for k, v in b.items():
+		a[k] = a.get(k, 0) + v
 
 
 class Calculator(object):
@@ -111,14 +118,14 @@ class Calculator(object):
 		for name, amount in recipe.inputs.items():
 			amount *= throughput
 			subresult = self.solve(name, amount)
-			merge_into(result, subresult)
+			merge_processes_into(result, subresult)
 		return result
 
 	def solve_all(self, items):
 		"""Solve for all the given items in form {item: desired throughput}. Output as per solve()"""
 		results = {}
 		for item, throughput in items.items():
-			merge_into(results, self.solve(item, throughput))
+			merge_processes_into(results, self.solve(item, throughput))
 		return results
 
 	def solve_oil(self, processes):
@@ -231,9 +238,11 @@ class Calculator(object):
 		]
 		new_processes = {p.item: p for p in new_processes if p.throughput}
 		new_inputs = excesses
+		print excesses
 		for process in new_processes.values():
 			merge_into(new_inputs, process.inputs())
-		merge_into(processes, new_processes)
+		print new_inputs
+		merge_processes_into(processes, new_processes)
 
 		return processes, new_inputs
 
@@ -241,7 +250,9 @@ class Calculator(object):
 		"""As per solve_all, but follow it with a call to solve_oil to resolve any oil products."""
 		results = self.solve_all(items)
 		results, further_inputs = self.solve_oil(results)
-		merge_into(results, self.solve_all(further_inputs))
+		print self.solve_all(further_inputs)
+		merge_processes_into(results, self.solve_all(further_inputs))
+		print results
 		return results
 
 	def split_into_steps(self, processes):
