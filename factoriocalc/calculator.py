@@ -12,24 +12,26 @@ class Process(object):
 		throughput - the rate at which the item must be produced
 		per_process_outputs - Map from output to amount per process. Normally {item: 1}
 		                      but is overridden in some special cases.
-		extra_deps - Any items to depend on that aren't an input. Used in some special cases.
 	"""
-	def __init__(self, item, recipe, throughput, outputs=None, extra_deps=()):
+	def __init__(self, item, recipe, throughput, outputs=None):
 		self.item = item
 		self.recipe = recipe
 		self.throughput = throughput
 		self.per_process_outputs = {item: 1} if outputs is None else outputs
-		self.extra_deps = set(extra_deps)
+
+	@property
+	def is_input(self):
+		return self.recipe is None
 
 	def buildings(self):
 		"""Returns number of buildings needed to achieve the required throughput,
 		or None for raw inputs"""
-		return None if self.recipe is None else self.throughput / self.recipe.throughput
+		return None if self.is_input else self.throughput / self.recipe.throughput
 
 	def inputs(self):
 		"""Returns {item: throughput required} for each input item,
 		or {} for raw inputs"""
-		return {} if self.recipe is None else {
+		return {} if self.is_input else {
 			k: v * self.throughput
 			for k, v in self.recipe.inputs.items()
 		}
@@ -38,14 +40,9 @@ class Process(object):
 		"""As inputs(), but for outputs."""
 		return {k: v * self.throughput for k, v in self.per_process_outputs.items()}
 
-	def depends(self):
-		"""Returns the set of items this process depends on, ie. its parents
-		in the DAG of processes."""
-		return set(self.inputs().keys()) | self.extra_deps
-
 	def rescale(self, new_throughput):
 		"""Return a new Process with a modified throughput"""
-		return type(self)(self.item, self.recipe, new_throughput, self.per_process_outputs, self.extra_deps)
+		return type(self)(self.item, self.recipe, new_throughput, self.per_process_outputs)
 
 	def __str__(self):
 		return "<{cls.__name__}: {throughput:.2f}/sec of {self.item}>".format(
@@ -224,8 +221,6 @@ class Calculator(object):
 			raise ValueError("Handling exccess oil products is not implemeted: {}".format(excesses))
 
 		# Now we build the outputs.
-		# Note the 'raw inputs' for heavy/light/petrol are replaced by similar Processes,
-		# but with an extra dep on 'oil products' and any cracking that produces it.
 		new_processes = [
 			Process('oil products', refinery_recipe, oil_processing, outputs={
 				'heavy oil': HEAVY_PER_PROCESS,
@@ -234,14 +229,14 @@ class Calculator(object):
 			}),
 			Process('heavy oil cracking', heavy_crack_recipe, heavy_cracking, outputs={'light oil': 1}),
 			Process('light oil cracking', light_crack_recipe, light_cracking, outputs={'petroleum': 1}),
-			Process('heavy oil', None, oil_processing * HEAVY_PER_PROCESS, outputs={}, extra_deps=['oil products']),
-			Process('light oil', None, oil_processing * LIGHT_PER_PROCESS, outputs={}, extra_deps=['oil products', 'heavy oil cracking']),
-			Process('petroleum', None, oil_processing * PETROL_PER_PROCESS, outputs={}, extra_deps=['oil products', 'light oil cracking']),
 		]
 		new_processes = {p.item: p for p in new_processes if p.throughput}
 		new_inputs = {}
 		for process in new_processes.values():
 			merge_into(new_inputs, process.inputs())
+		# Disregard petrol products in new inputs as they're already accounted for.
+		for item in ('heavy oil', 'light oil', 'petroleum'):
+			new_inputs.pop(item, None)
 		merge_processes_into(processes, new_processes)
 
 		return processes, new_inputs
@@ -275,20 +270,12 @@ def split_into_steps(processes, input_limit=None, input_liquid_limit=None):
 	results = []
 	inputs = []
 	for process in processes.values():
-		# If something has no dependencies, it's a raw input
-		is_input = not process.depends()
-
-		if (not is_input) and not (process.inputs() or process.outputs()):
-			# Dummy process. Pass through as a single step.
-			results.append(process)
-			continue
-
 		steps = max(
 			[
-				throughput / limit(item, is_input)
+				throughput / limit(item, process.is_input)
 				for item, throughput in process.inputs().items()
 			] + [
-				throughput / limit(item, is_input)
+				throughput / limit(item, process.is_input)
 				for item, throughput in process.outputs().items()
 			]
 		)
@@ -305,7 +292,7 @@ def split_into_steps(processes, input_limit=None, input_liquid_limit=None):
 		if leftover:
 			part.append(fractional_step)
 
-		if is_input:
+		if process.is_input:
 			inputs += part
 		else:
 			results += part
