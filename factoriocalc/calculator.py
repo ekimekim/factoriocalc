@@ -1,4 +1,5 @@
 
+import math
 from fractions import Fraction
 
 
@@ -37,11 +38,11 @@ class ProcessWithExtraDeps(object):
 	"""Process with extra dependencies besides its inputs, used to make oil processing
 	work in the correct order despite lacking explicit input links."""
 	def __init__(self, item, recipe, throughput, *deps):
-		super(OilProductProcess, self).__init__(item, recipe, throughput)
+		super(ProcessWithExtraDeps, self).__init__(item, recipe, throughput)
 		self.extra_deps = set(deps)
 
 	def depends(self):
-		return super(OilProductProcess, self) | self.extra_deps
+		return super(ProcessWithExtraDeps, self) | self.extra_deps
 
 
 def merge_into(a, b):
@@ -60,7 +61,8 @@ class Calculator(object):
 	"""
 	DEFAULT_MODS = 'prod 3, prod 3, prod 3, prod 3, speed 3, speed 3, speed 3, speed 3'
 
-	def __init__(self, datafile, stop_items=[], module_priorities=DEFAULT_MODS, beacon_speed=0):
+	def __init__(self, datafile, stop_items=[], module_priorities=DEFAULT_MODS,
+	             beacon_speed=0, oil_beacon_speed=None):
 		"""
 		datafile: The Datafile object to take recipes from.
 		stop_items: Items whose names are in this list will be treated as raw inputs,
@@ -71,17 +73,22 @@ class Calculator(object):
 			Common values:
 				2 (+200%, for 4 beacons, ie. one row of beacons reachable by an assembler)
 				4 (+400%, for 8 becaons, ie. two rows of beacons reachable by an assember)
+		oil_beacon_speed: Specific alternate beacon speed for oil refineries, which can fit more.
+			Common values:
+				3 (+300%, for 6 beacons / 1 row)
+				6 (+600%, for 12 becaons / 2 rows)
 		"""
 		self.datafile = datafile
 		self.stop_items = stop_items
 		self.module_priorities = module_priorities
 		self.beacon_speed = beacon_speed
+		self.oil_beacon_speed = beacon_speed if oil_beacon_speed is None else oil_beacon_speed
 
 	def solve(self, item, throughput):
 		"""Returns a dict {item: Process(item, recipe, throughput)}
 		such that the requested throughput of the input item can be produced.
 		"""
-		if item not in self.datafile.recipes or item in stop_items:
+		if item not in self.datafile.recipes or item in self.stop_items:
 			# raw input
 			return {item: Process(item, None, throughput)}
 		recipe = self.datafile.recipes[item]
@@ -121,16 +128,10 @@ class Calculator(object):
 		to indicate to the user that it must be dealt with in some external way.
 		"""
 
-		# TODO this is off. cracker amounts aren't being calculated correctly, though they're almost right?
-		# sigh, it's a clusterfuck.
-
-		# Also beacon speed should be counted differently for refineries as they can
-		# have more in range
-
 		HEAVY_PER_PROCESS, LIGHT_PER_PROCESS, PETROL_PER_PROCESS = 10, 45, 55
 
 		refinery_recipe = self.datafile.recipes['oil products']
-		refinery_recipe = self.datafile.resolve_recipe(refinery_recipe, self.module_priorities, self.beacon_speed)
+		refinery_recipe = self.datafile.resolve_recipe(refinery_recipe, self.module_priorities, self.oil_beacon_speed)
 		heavy_crack_recipe = self.datafile.cracking_recipes['heavy oil cracking']
 		heavy_crack_recipe = self.datafile.resolve_recipe(heavy_crack_recipe, self.module_priorities, self.beacon_speed)
 		light_crack_recipe = self.datafile.cracking_recipes['light oil cracking']
@@ -223,12 +224,11 @@ class Calculator(object):
 		return processes, new_inputs
 
 	def solve_with_oil(self, items):
-		"""As per solve_all, but follow it with a call to solve_oil to resolve any oil products.
-		It returns (results, buildings) as per solve_oil()"""
+		"""As per solve_all, but follow it with a call to solve_oil to resolve any oil products."""
 		results = self.solve_all(items)
-		results, further_inputs, buildings = self.solve_oil(results)
+		results, further_inputs = self.solve_oil(results)
 		merge_into(results, self.solve_all(further_inputs))
-		return results, buildings
+		return results
 
 	def split_into_steps(self, processes):
 		"""Splits a dict of full processes into an unordered list of steps,
