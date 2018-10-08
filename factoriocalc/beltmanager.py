@@ -15,6 +15,7 @@ Placement = namedtuple('Placement', [
 
 Compaction = namedtuple('Compaction', [
 	'bus', # as Placement
+	'width', # as Placement
 	'compactions', # list of pairs of bus line numbers (a, b) compacting with preference to a
 	'shifts', # list of pairs of bus line numbers (a, b) moving line at position a into position b
 ])
@@ -163,6 +164,7 @@ class BeltManager(object):
 
 		self.output.append(Compaction(
 			bus = prev_bus,
+			width = len(prev_bus), # bus width never grows here, only shrinks
 			compactions = compactions,
 			shifts = [],
 		))
