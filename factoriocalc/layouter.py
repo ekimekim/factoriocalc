@@ -18,7 +18,7 @@ PlacedPrimitive = namedtuple('', [
 # The bus area available for a given step is from 2 above the processing area to 1 below.
 # The double-column between beacons and bus is for power.
 # Up to 2 columns of padding is then added to keep beacons aligned to a multiple of 3.
-# Visual: (b is beacon, e is power pole, p is process, X is not allowed, + is optional padding, _ is usable)
+# Visual: (b is beacon, e is substation, p is process, X is not allowed, + is optional padding, _ is usable)
 #   XXXXXXXXXXbbb
 #   ______ee++bbb
 #   ______ee++bbb
@@ -30,8 +30,17 @@ PlacedPrimitive = namedtuple('', [
 #   ________++ppp
 #   ________++ppp
 #   ________++bbb
-#   XXXXXXeeXXbbb
-#   XXXXXXeeXXbbb
+#   XXXXXXXXXXbbb
+#   XXXXXXXXXXbbb
+# There's also another double-column for electric poles at the other end,
+# this ensures rows are linked by power even if the bus width varies wildly.
+
+# Note this implies the guarentees we give a processing step primitive:
+# * Inputs arrive at given y slots
+# * Outputs are expected at given y slots
+# * The area will have beacons above and below, but not nessecarily extending past
+#   the edges, so care must be taken to have buildings fully covered, they must be off the edge a little.
+# * Power is provided from 
 
 # Each line in the bus is seperated by a 1 unit gap.
 # In general each action involving a line in the bus area should keep to its own column
@@ -60,23 +69,44 @@ def layout(steps):
 	"""Converts a list of Placements and Compactions into
 	a collection of Primitives."""
 	primitives = []
-	prev_beacon_width = 0
+	prev_beacon_start = None
+	prev_beacon_end = 0
 	for step, base_y in zip(steps, count(3, 10)):
-		p, beacon_width = layout_step(step, base_y)
+		p, beacon_start, beacon_end = layout_step(step, base_y)
 		primitives += p
 		# add beacon row above this step
-		primitives += layout_beacons(base_y - 3, max(beacon_width, prev_beacon_width))
-		prev_beacon_width = beacon_width
+		primitives += layout_beacons(
+			base_y - 3,
+			(min(beacon_start, prev_beacon_start) if prev_beacon_start is not None else beacon_start),
+			max(beacon_end, prev_beacon_end),
+		)
+		prev_beacon_start = beacon_start
+		prev_beacon_end = beacon_end
 	return primitives
 
 
 def layout_step(step, base_y):
 	"""Layout given step with y value of the top of the processing area being base_y.
-	Returns (primitives,  how long beacon rows above and below must extend)
+	Returns:
+		primitives
+		x position to start beacons at
+		how long beacon rows above and below must extend
 	"""
-	primitives = layout_bus(step, base_y)
 	bus_width = step.width * 2
-	elec_width = 2
+	elec_width = 2 + 2 # 2 at start + 2 at end
 	padding = 3 - (bus_width + elec_width) % 3
 	process_base_x = bus_width + elec_width + padding
 	assert process_base_x % 3 == 0
+
+	primitives = layout_bus(step, process_base_x, base_y)
+	if isinstance(step, Placement):
+		p, process_end = layout_process(step, process_base_x, base_y)
+		primitives += p
+	else:
+		process_end = process_base_x
+
+	return primitives, process_base_x, process_end
+
+
+def layout_bus(step, process_base_x, base_y):
+
