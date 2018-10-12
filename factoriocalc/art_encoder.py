@@ -2,6 +2,8 @@
 
 import functools
 
+from .primitives import E
+
 # art formatters
 
 def boxed(c):
@@ -10,13 +12,13 @@ def boxed(c):
 		["┌", "─", "┐"],
 		["│",   c, "│"],
 		["└", "─", "┘"],
-	],
+	]
 
 def forecolor(content, color=8, bold=False):
-	if not isinstance(color, basestring):
+	if not isinstance(content, basestring):
 		return [forecolor(part, color, bold)
 		        for part in content]
-	color = str(color)
+	color = str(30 + color)
 	if bold:
 		color += ';1'
 	return '\x1b[{}m{}\x1b[m'.format(color, content)
@@ -38,9 +40,9 @@ class ArtEncoder(object):
 	EMPTY = ' '
 
 	ART = {
-		'inserter': green([['i']]),
-		'assembler': yellow(boxed("A")),
-		'belt': lambda obj: blue([[
+		E.inserter: green([['i']]),
+		E.assembler: yellow(boxed("A")),
+		E.belt: lambda obj: blue([[
 			{
 				0: '^',
 				1: '>',
@@ -48,7 +50,7 @@ class ArtEncoder(object):
 				3: '<',
 			}[obj.orientation]
 		]]),
-		'underground belt': lambda obj: blue([[
+		E.underground_belt: lambda obj: blue([[
 			{
 				0: '∪',
 				1: '⊂',
@@ -56,25 +58,27 @@ class ArtEncoder(object):
 				3: '⊃',
 			}[obj.orientation]
 		]]),
-		'splitter': lambda obj: blue({
+		E.splitter: lambda obj: blue({
 			0: [['S', 'S']],
 			1: [['S'], ['S']],
 		}[obj.orientation % 2]),
-		'electric pole': 'o',
-	},
+		E.medium_pole: [['o']],
+		E.beacon: boxed('B'),
+	}
 
 	def encode(self, blueprint):
 		"""As with all blueprint encoders, the incoming blueprint should be
-		a list of GameObjects"""
-		width = max(obj.x for obj in blueprint) + 1
-		height = max(obj.y for obj in blueprint) + 1
+		a list of Entities."""
+		# biggest entities are 5x5
+		width = max(obj.position.x for obj in blueprint) + 5
+		height = max(obj.position.y for obj in blueprint) + 5
 		grid = [[self.EMPTY] * width for _ in range(height)]
 
 		for obj in blueprint:
 			art = self.ART.get(obj.name, bold([['?']]))
 			if callable(art):
 				art = art(obj)
-			self.blit(grid, obj.x, obj.y, art)
+			self.blit(grid, obj.position.x, obj.position.y, art)
 
 		return '\n'.join([''.join(row) for row in grid])
 

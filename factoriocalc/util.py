@@ -1,5 +1,8 @@
 
+from collections import namedtuple
 from fractions import Fraction
+
+Point = namedtuple('Point', ['x', 'y'])
 
 def is_liquid(item):
 	LIQUIDS = [

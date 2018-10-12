@@ -4,6 +4,8 @@ from fractions import Fraction
 from .datafile import Datafile
 from .calculator import Calculator, split_into_steps
 from .beltmanager import BeltManager, Placement, Compaction
+from .layouter import layout, flatten
+from .art_encoder import ArtEncoder
 
 
 def format_bus(bus):
@@ -70,3 +72,16 @@ def main(items, data_path='./factorio_recipes', stop_items=''):
 		else:
 			print step
 	print "Bus: {}".format(format_bus(manager.bus))
+
+	print "=== Layouter stage ==="
+	primitives = layout(manager.output)
+	for p in primitives:
+		print "{}: {}".format(p.position, ", ".join(map(str, p.primitive)))
+
+	print "=== Flattener stage ==="
+	entities = flatten(primitives)
+	for e in entities:
+		print e
+
+	print "=== Encoder stage ==="
+	print ArtEncoder().encode(entities)

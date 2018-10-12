@@ -4,13 +4,10 @@ from itertools import count
 
 from . import primitives as primitive_types
 from .beltmanager import Placement
-from .util import is_liquid
+from .util import is_liquid, Point
 
 
-Point = namedtuple('Point', ['x', 'y'])
-
-
-PlacedPrimitive = namedtuple('', [
+PlacedPrimitive = namedtuple('PlacedPrimitive', [
 	'position', # Point of upper left corner
 	'primitive', # Primitive to place
 ])
@@ -73,6 +70,20 @@ def place(list, x, y, primitive):
 
 # start bus at 2 so we can have a line of power on left
 BUS_START_X = 2
+
+
+def flatten(primitives):
+	"""Flatten a list of primitives to a list of entities"""
+	entities = []
+	for primitive in primitives:
+		for entity in primitive.primitive:
+			entities.append(entity._replace(
+				position=Point(
+					entity.position.x + primitive.position.x,
+					entity.position.y + primitive.position.y,
+				)
+			))
+	return entities
 
 
 def layout(steps):
@@ -143,7 +154,7 @@ def layout_bus(step, process_base_x, base_y):
 			place(primitives, bus_x, base_y-2, primitive)
 		# used, unused or blank, doesn't matter. Every 4 lines + the last line gets a pole.
 		if bus_pos % 4 == 0 or bus_pos == len(step.bus) - 1:
-			place(primitives, bus_x, base_y-2, primitive_types.medium_pole)
+			place(primitives, bus_x+1, base_y-2, primitive_types.medium_pole)
 
 	if isinstance(step, Placement):
 		primitives += layout_in_outs(step, process_base_x, base_y)
@@ -156,6 +167,7 @@ def layout_beacons(y, x_start, x_end):
 	primitives = []
 	for x in range(x_start, x_end + 3, 3):
 		place(primitives, x, y, primitive_types.beacon)
+	return primitives
 
 
 def layout_in_outs(step, process_base_x, base_y):
@@ -176,4 +188,4 @@ def layout_process(step, base_x, base_y):
 	* list of primitives
 	* the end point of the process in the x axis, ie. base_x + width.
 	"""
-	return [], base_x + 20 # TODO
+	return [], base_x # TODO
