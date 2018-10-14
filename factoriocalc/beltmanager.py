@@ -9,7 +9,8 @@ Placement = namedtuple('Placement', [
 	'width', # bus width at this point (is max of before/after if it changes here)
 	'process', # the Process being done in this step
 	'inputs', # map {bus line number -> process input y pos}
-	'outputs', # map {bus line number -> process output y pos
+	# Output needs item type because, unlike input, we can't just look it up in self.bus
+	'outputs', # map {bus line number -> (item type, process output y pos)}
 ])
 
 
@@ -80,8 +81,7 @@ class BeltManager(object):
 		inputs = {}
 		inputs_by_throughput = sorted(step.inputs().items(), key=lambda (i, t): -t) # highest to lowest
 		# highest throughput input goes in top y slot
-		y_slots = range(7)[::-1]
-		for y_slot, (input, throughput) in zip(y_slots, inputs_by_throughput):
+		for y_slot, (input, throughput) in enumerate(inputs_by_throughput):
 			lines = self.find_lines(input, throughput)
 			# pick least loaded matching line first, falling back to rightmost.
 			line_num, line = min(lines, key=lambda (i, l): (l.throughput, -i))
@@ -91,13 +91,17 @@ class BeltManager(object):
 
 		# pick outputs
 		outputs = {}
-		# output slots count up from bottom, in no particular order
-		for y_slot, (output, throughput) in enumerate(step.outputs().items()):
+		# output slots count up from bottom, highest throughput at bottom
+		y_slots = range(7)[::-1]
+		outputs_by_throughput = sorted(step.outputs().items(), key=lambda (i, t): -t)
+		for y_slot, (output, throughput) in zip(y_slots, outputs_by_throughput):
 			# for now, always allocate a new line for each output, we can compress later.
 			line_num = self.add_line(output, throughput)
-			outputs[line_num] = y_slot
+			outputs[line_num] = (output, y_slot)
 
-		assert not (set(inputs.values()) & set(outputs.values())), "inputs and outputs overlap"
+		assert not (set(inputs.values()) & set([
+			y_slot for output, y_slot in outputs.values()
+		])), "inputs and outputs overlap"
 
 		placement = Placement(
 			bus = prev_bus,

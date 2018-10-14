@@ -4,7 +4,7 @@ from collections import namedtuple
 
 from . import primitives as primitive_types
 from .beltmanager import Placement
-from .util import is_liquid, Point
+from .util import is_liquid, Point, UP, RIGHT, DOWN, LEFT
 
 
 PlacedPrimitive = namedtuple('PlacedPrimitive', [
@@ -220,7 +220,87 @@ def layout_in_outs(step, process_base_x, base_y):
 	"""Return the list of primitives needed to connect inputs and outputs
 	from the bus to the process.
 	"""
-	return [] # TODO
+	# Each in-out has two parts:
+	# * The actual split or join component, which occupies
+	#   the area (line_x, base_y - 2) to (line_x + 1, base_y + 8)
+	# * The line running horizontally from that component to the edge of the process area,
+	#   which must run on the assigned y_slot (y = base_y + y_slot) and go under any
+	#   split/join components between it and the process.
+	# Note: Since we can only go under 8 tiles max, it may end up that >4 split/joins back-to-back
+	# prevent a 5th inout from running under them. But this is extremely unlikely, so we're just
+	# going to die if we encounter it and hope we don't.
+
+	primitives = []
+
+	# Set up some vars for horiz_line
+	used = set(step.inputs.keys() + step.outputs.keys()) # bus indexes that have an on/off ramp
+	# Some notes on padding. There are 3 cases:
+	#  no padding - no problem
+	#  two padding - extra double column is treated as extra bus line, no problem
+	#  one padding - special case. We need to treat it as an occupied bus line,
+	#  otherwise we might try to put a surface there, which will collide with the left-most
+	#  column of the process area.
+	target_index = (process_base_x - BUS_START_X) / 2
+	if (process_base_x - BUS_START_X) % 2 == 1:
+		# uneven padding, forbid the last "line"
+		used.add(target_index)
+		target_index += 1
+
+	def horiz_line(item, bus_index, y_slot, orientation):
+		# Assumes up-line at bus_index is already placed.
+		# Runs from left to right working out valid positions.
+		primitive = primitive_types.pipe_surface if is_liquid(item) else primitive_types.belt_surface
+		place_at_index = lambda i: place(
+			primitives,
+			BUS_START_X + 2 * i + (1 if orientation == LEFT else 0),
+			base_y + y_slot,
+			primitive,
+		)
+		# We keep trying to go 4 indexes (8 tiles) at a time, if we're blocked
+		# then we walk back left until we find a placable position.
+		# We stop when we're in range of process_base_x.
+		while bus_index + 4 < target_index:
+			for delta in range(4, 0, -1):
+				if bus_index + delta not in used:
+					bus_index += delta
+					place_at_index(bus_index)
+					break
+			else:
+				raise ValueError("Failed to place horizontal line")
+
+	# inputs (off-ramps and right-running lines)
+	for bus_index, y_slot in step.inputs.items():
+		bus_x = BUS_START_X + 2 * bus_index
+		line = step.bus[bus_index]
+		# check if we're consuming all the input
+		line_ends = line.throughput == step.process.inputs()[line.item]
+		# map from (liquid, ends) to primitive func to call as f(y_slot)
+		primitive = {
+			(False, False): primitive_types.belt_offramp,
+			(False, True): primitive_types.belt_offramp_all,
+			(True, False): primitive_types.pipe_ramp,
+			(True, True): primitive_types.pipe_offramp_all,
+		}[is_liquid(line.item), line_ends](y_slot)
+		# place the off-ramp
+		place(primitives, bus_x, base_y - 2, primitive)
+		# run the line right to the end of the bus
+		horiz_line(line.item, bus_index, y_slot, RIGHT)
+
+	# outputs (on-ramps and left-running lines)
+	for bus_index, (item, y_slot) in step.inputs.items():
+		bus_x = BUS_START_X + 2 * bus_index
+		# XXX later, support joining with existing line instead of only adding new
+		primitive = (
+			primitive_types.pipe_onramp_all(7 - y_slot)
+			if is_liquid(item) else
+			primitive_types.belt_onramp_all(7 - y_slot)
+		)
+		# place the on-ramp
+		place(primitives, bus_x, base_y + y_slot, primitive)
+		# run the line left from end of bus to here
+		horiz_line(item, bus_index, y_slot, LEFT)
+
+	return primitives
 
 
 def layout_compaction(step, base_y):

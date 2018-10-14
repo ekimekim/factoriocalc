@@ -1,11 +1,21 @@
+# -encoding: utf-8-
 
 
 from collections import namedtuple
 
-from .util import Point
+from .util import Point, UP, RIGHT, DOWN, LEFT
 
 
-UP, RIGHT, DOWN, LEFT = range(4)
+def orientation_to_vector(orientation):
+	"""Return a Point with the unit vector for the direction given,
+	eg. up is (0, -1).
+	"""
+	return {
+		UP: Point(0, -1),
+		RIGHT: Point(1, 0),
+		DOWN: Point(0, 1),
+		LEFT: Point(-1, 0),
+	}[orientation]
 
 
 Entity = namedtuple('Entity', [
@@ -70,6 +80,89 @@ roboport_underpass_belt = [
 	entity(0, 0, E.underground_belt, DOWN),
 	entity(0, 6, E.underground_belt, UP),
 ]
+
+
+# Run a length of belt in the specified direction for specified length
+def belt(base_x, base_y, orientation, length):
+	delta = orientation_to_vector(orientation)
+	return [
+		entity(base_x + i * delta.x, base_y + i * delta.y, E.belt, orientation)
+		for i in range(length)
+	]
+
+
+# An underground belt "coming up for air", ie. an output then another input
+# in the same direction immediately.
+def belt_surface(orientation):
+	delta = orientation_to_vector(orientation)
+	return [
+		entity(0, 0, E.underground_belt, orientation),
+		entity(delta.x, delta.y, E.underground_belt, orientation),
+	]
+
+
+# As belt_surface but for pipes.
+def pipe_surface(orientation):
+	delta = orientation_to_vector(orientation)
+	return [
+		entity(0, 0, E.underground_pipe, orientation),
+		entity(delta.x, delta.y, E.underground_pipe, orientation),
+	]
+
+
+# Take items off a belt onto given y slot, though the belt continues.
+# Expects a belt input from above (0,0), a belt output below (0,9)
+# and a underground belt output right of (1, y_slot).
+# Should be placed at y=-3 relative to y slots.
+# Note the splitter preferences the process, and only the remainder continues.
+# Looks like this:
+#  v
+#  ...
+#  v
+#  Ss
+#  v∪
+#  >⊃   y_slot
+#   ∩
+#  v<
+#  v
+#  ...
+#  v
+def belt_offramp(y_slot):
+	return (
+		belt(0, 0, DOWN, y_slot)
+		+ [
+			entity(0, y_slot, E.splitter, DOWN, output_priority='right'),
+			entity(0, y_slot + 1, E.belt, DOWN),
+			entity(1, y_slot + 1, E.underground_belt, DOWN),
+			entity(0, y_slot + 2, E.belt, RIGHT),
+			entity(1, y_slot + 2, E.underground_belt, RIGHT),
+			entity(1, y_slot + 3, E.underground_belt, UP),
+			entity(0, y_slot + 4, E.belt, DOWN),
+			entity(1, y_slot + 4, E.belt, LEFT),
+		] +
+		belt(0, y_slot + 5, DOWN, 5 - y_slot)
+	)
+
+
+# As belt_offramp, but belt does not continue. Does not go below y_slot.
+#  v
+#  ...
+#  v
+#  >>   y_slot
+def belt_offramp_all(y_slot):
+	return belt(0, 0, DOWN, y_slot + 2) + belt(0, y_slot + 2, RIGHT, 2)
+
+
+# Take liquid off or put it on a bus pipe that continues.
+#  =
+#  ...
+#  =
+#  ==   y_slot
+#  =
+#  ...
+#  =
+def pipe_ramp(y_slot):
+	return [entity(0, i, E.pipe) for i in range(10)] + [entity(1, y_slot + 2, E.pipe)]
 
 
 # Single-entity primitives, used directly for simple or fiddly bits in layouter

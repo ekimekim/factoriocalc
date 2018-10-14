@@ -18,3 +18,4 @@ def line_limit(item):
 		return Fraction(17*60)
 	return Fraction(40) # full blue belt
 
+UP, RIGHT, DOWN, LEFT = range(4)
