@@ -148,21 +148,43 @@ def belt_offramp(y_slot):
 #  v
 #  ...
 #  v
-#  >>   y_slot
+#  >⊃   y_slot
 def belt_offramp_all(y_slot):
-	return belt(0, 0, DOWN, y_slot + 2) + belt(0, y_slot + 2, RIGHT, 2)
+	return belt(0, 0, DOWN, y_slot + 2) + [
+		entity(0, y_slot + 2, E.belt, RIGHT),
+		entity(1, y_slot + 2, E.underground_belt, RIGHT),
+	]
 
 
 # Take liquid off or put it on a bus pipe that continues.
 #  =
 #  ...
 #  =
-#  ==   y_slot
+#  =⊃   y_slot
 #  =
 #  ...
 #  =
 def pipe_ramp(y_slot):
-	return [entity(0, i, E.pipe) for i in range(10)] + [entity(1, y_slot + 2, E.pipe)]
+	return [entity(0, i, E.pipe) for i in range(10)] + [entity(1, y_slot + 2, E.underground_pipe, LEFT)]
+
+
+# As belt_offramp_all but for pipes
+#  =
+#  ...
+#  =
+#  ==   y_slot
+def pipe_offramp_all(y_slot):
+	return [entity(0, i, E.pipe) for i in range(y_slot + 3)] + [entity(1, y_slot + 2, E.pipe)]
+
+
+# Move output from an underground belt to the right of (1, 0)
+# onto a new line going down of given height
+#  v⊃
+#  v
+#  ...
+#  v
+def belt_onramp_all(height):
+	return belt(0, 0, DOWN, height + 1) + [entity(1, 0, E.underground_belt, LEFT)]
 
 
 # Single-entity primitives, used directly for simple or fiddly bits in layouter

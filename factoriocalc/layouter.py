@@ -249,7 +249,8 @@ def layout_in_outs(step, process_base_x, base_y):
 	def horiz_line(item, bus_index, y_slot, orientation):
 		# Assumes up-line at bus_index is already placed.
 		# Runs from left to right working out valid positions.
-		primitive = primitive_types.pipe_surface if is_liquid(item) else primitive_types.belt_surface
+		primitive_fn = primitive_types.pipe_surface if is_liquid(item) else primitive_types.belt_surface
+		primitive = primitive_fn(orientation)
 		place_at_index = lambda i: place(
 			primitives,
 			BUS_START_X + 2 * i + (1 if orientation == LEFT else 0),
@@ -287,7 +288,7 @@ def layout_in_outs(step, process_base_x, base_y):
 		horiz_line(line.item, bus_index, y_slot, RIGHT)
 
 	# outputs (on-ramps and left-running lines)
-	for bus_index, (item, y_slot) in step.inputs.items():
+	for bus_index, (item, y_slot) in step.outputs.items():
 		bus_x = BUS_START_X + 2 * bus_index
 		# XXX later, support joining with existing line instead of only adding new
 		primitive = (
