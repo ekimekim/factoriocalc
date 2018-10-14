@@ -1,4 +1,5 @@
 
+import math
 from collections import namedtuple
 
 from . import primitives as primitive_types
@@ -276,13 +277,15 @@ def layout_roboport_row(bus, base_y, width):
 	# Rearranging to calculate required roboports:
 	#	num_roboports = (reach - LOGISTIC_AREA/2 - CONSTRUCT_AREA/2) / LOGISTIC_AREA
 	# Then we take ceil of that since we need an integer.
-	num_roboports = (width - LOGISTIC_AREA/2 - CONSTRUCT_AREA/2) / LOGISTIC_AREA
+	num_roboports = max(1, int(math.ceil(
+		(width - LOGISTIC_AREA/2 - CONSTRUCT_AREA/2) / LOGISTIC_AREA
+	)))
 
 	for i in range(num_roboports):
 		# note x pos is the pos we said above, but -2 because that's measuring from the center,
 		# not the top-left.
 		x_pos = LOGISTIC_AREA/2 - 2 + i * LOGISTIC_AREA
-		pole_x_pos = x_pos - LOGISTIC_AREA/2
+		pole_x_pos = max(0, x_pos - LOGISTIC_AREA/2)
 		place(primitives, pole_x_pos, base_y, primitive_types.big_pole)
 		place(primitives, x_pos, base_y, primitive_types.roboport)
 		# power pole for roboport, on its left

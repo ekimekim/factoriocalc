@@ -16,7 +16,10 @@ def format_bus(bus):
 	)
 
 
-def main(items, data_path='./factorio_recipes', stop_items=''):
+def main(items, data_path='./factorio_recipes', stop_items='', show_conflicts=False, verbose=False):
+	def v(s):
+		if verbose:
+			print s
 
 	_items = {}
 	if items:
@@ -38,50 +41,50 @@ def main(items, data_path='./factorio_recipes', stop_items=''):
 		oil_beacon_speed=6, # double-row of beacons
 	)
 
-	print "=== Calculator stage ==="
+	v("=== Calculator stage ===")
 	processes = calculator.solve_with_oil(items)
 	for name, process in processes.items():
-		print "{}: {}".format(name, process)
+		v("{}: {}".format(name, process))
 
-	print "=== Step breakdown stage ==="
+	v("=== Step breakdown stage ===")
 	steps, inputs = split_into_steps(processes)
-	print "Inputs:"
+	v("Inputs:")
 	for process in inputs:
-		print process
-	print "Steps:"
+		v(process)
+	v("Steps:")
 	for process in steps:
-		print process
+		v(process)
 
-	print "=== Belt manager stage ==="
+	v("=== Belt manager stage ===")
 	manager = BeltManager(steps, inputs)
 	manager.run()
 	for step in manager.output:
-		print "Bus: {}".format(format_bus(step.bus))
+		v("Bus: {}".format(format_bus(step.bus)))
 		if isinstance(step, Placement):
-			print "{}: {} -> {}".format(
+			v("{}: {} -> {}".format(
 				step.process,
 				", ".join(map(str, sorted(step.inputs.keys()))),
 				", ".join(map(str, sorted(step.outputs.keys()))),
-			)
+			))
 		elif isinstance(step, Compaction):
-			print "Compact {}".format(", ".join([
+			v("Compact {}".format(", ".join([
 				"{} into {}".format(s, d) for d, s in step.compactions
 			] + [
 				"{} becomes {}".format(s, d) for s, d in step.shifts
-			]))
+			])))
 		else:
-			print step
-	print "Bus: {}".format(format_bus(manager.bus))
+			v(step)
+	v("Bus: {}".format(format_bus(manager.bus)))
 
-	print "=== Layouter stage ==="
+	v("=== Layouter stage ===")
 	primitives = layout(manager.output, manager.bus)
 	for p in primitives:
-		print "{}: {}".format(p.position, ", ".join(map(str, p.primitive)))
+		v("{}: {}".format(p.position, ", ".join(map(str, p.primitive))))
 
-	print "=== Flattener stage ==="
+	v("=== Flattener stage ===")
 	entities = flatten(primitives)
 	for e in entities:
-		print e
+		v(e)
 
-	print "=== Encoder stage ==="
-	print ArtEncoder().encode(entities)
+	v("=== Encoder stage ===")
+	print ArtEncoder(error_on_conflict = not show_conflicts).encode(entities)

@@ -70,6 +70,9 @@ class ArtEncoder(object):
 		E.roboport: boxed('R', n=4),
 	}
 
+	def __init__(self, error_on_conflict=True):
+		self.error_on_conflict = error_on_conflict
+
 	def encode(self, blueprint):
 		"""As with all blueprint encoders, the incoming blueprint should be
 		a list of Entities."""
@@ -79,6 +82,8 @@ class ArtEncoder(object):
 		grid = [[self.EMPTY] * width for _ in range(height)]
 
 		for obj in blueprint:
+			if obj.position.x < 0 or obj.position.y < 0:
+				raise ValueError("Blueprint has entity with out of bounds position: {}".format(obj))
 			art = self.ART.get(obj.name, bold([['?']]))
 			if callable(art):
 				art = art(obj)
@@ -91,5 +96,9 @@ class ArtEncoder(object):
 			for dx, char in enumerate(row):
 				this_x, this_y = x + dx, y + dy
 				if grid[this_y][this_x] != self.EMPTY:
-					raise ValueError("Blueprint has overlapping objects at ({}, {})".format(this_x, this_y))
+					if self.error_on_conflict:
+						raise ValueError("Blueprint has overlapping objects at ({}, {}): Tried to overwrite {} with {}".format(
+							this_x, this_y, grid[this_y][this_x], char
+						))
+					char = forecolor('!', color=1, bold=True)
 				grid[this_y][this_x] = char
