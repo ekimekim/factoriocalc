@@ -36,7 +36,7 @@ def place(list, x, y, primitive):
 #   ______++bbb
 #   XXXXXXXXbbb
 #   XXXXXXXXbbb
-# There's also another double-column for electric poles at the other end,
+# There's also another section for electric poles at the other end,
 # this ensures rows are linked by power even if the bus width varies wildly.
 
 # Note this implies the guarentees we give a processing step primitive:
@@ -154,12 +154,6 @@ def layout_step(step, base_y):
 		x position to start beacons at
 		how long beacon rows above and below must extend
 	"""
-	# TODO include a roboport + radar in the working area, between bus and process
-	# maybe also one on far left?
-	# not enough coverage. alternate plan: every N rows is an infra row with roboports+radar,
-	# that way it can cover whole X range.
-	# if we also put a roboport every N/2 rows on the far left (extend bus start to match),
-	# that connects them all up logistically, with the N rows giving full construction coverage.
 	bus_width = step.width * 2
 	padding = 3 - (bus_width + BUS_START_X) % 3
 	process_base_x = bus_width + BUS_START_X + padding
