@@ -1,6 +1,5 @@
 
 from collections import namedtuple
-from itertools import count
 
 from . import primitives as primitive_types
 from .beltmanager import Placement
@@ -179,6 +178,7 @@ def layout_bus(step, process_base_x, base_y):
 	"""Layout the bus area for the given step. This includes:
 	* Running power along the bus
 	* Running unused lines through to the step below
+	* The left-most "infrastructure column" of power and roboports
 	If Placement:
 	* Offramping inputs to the process
 	* Onramping outputs to the bus below
@@ -187,6 +187,10 @@ def layout_bus(step, process_base_x, base_y):
 	Returns list of primitives.
 	"""
 	primitives = []
+
+	# infra column - roboport with big pole below it
+	place(primitives, 0, base_y - 3, primitive_types.roboport)
+	place(primitives, 2, base_y + 1, primitive_types.big_pole)
 
 	# underpasses and power poles
 	if isinstance(step, Placement):
@@ -242,4 +246,46 @@ def layout_roboport_row(bus, base_y, width):
 	"""Return primitives for a row of roboports covering an x region out to width,
 	including the bus lines needed.
 	"""
-	return [] # TODO
+	primitives = []
+
+	# Underpasses. Note these are shorter underpasses, without pumps.
+	for bus_pos, line in enumerate(bus):
+		if line is None:
+			continue
+		bus_x = BUS_START_X + 2 * bus_pos
+		primitive = (
+			primitive_types.roboport_underpass_pipe
+			if is_liquid(line.item) else
+			primitive_types.roboport_underpass_belt
+		)
+		place(primitives, bus_x, base_y-2, primitive)
+
+	# Roboport areas
+	LOGISTIC_AREA = 50
+	CONSTRUCT_AREA = 110
+
+	# Main roboport area. Put a roboport (and accompanying power) every LOGISTIC_AREA,
+	# starting at LOGISTIC_AREA/2 so it links with infra column roboports above and below.
+	# Since power poles only reach 30 tiles and logistic area is 50 tiles, put a large power pole
+	# between each.
+
+	# First roboport is placed at LOGISTIC_AREA/2, and so covers construction out to:
+	#	LOGISTIC_AREA/2 + CONSTRUCT_AREA/2
+	# Each extra roboport adds LOGISTIC_AREA to the total reach, so final reach is:
+	#	reach = LOGISTIC_AREA/2 + CONSTRUCT_AREA/2 + num_roboports * LOGISTIC_AREA
+	# Rearranging to calculate required roboports:
+	#	num_roboports = (reach - LOGISTIC_AREA/2 - CONSTRUCT_AREA/2) / LOGISTIC_AREA
+	# Then we take ceil of that since we need an integer.
+	num_roboports = (width - LOGISTIC_AREA/2 - CONSTRUCT_AREA/2) / LOGISTIC_AREA
+
+	for i in range(num_roboports):
+		# note x pos is the pos we said above, but -2 because that's measuring from the center,
+		# not the top-left.
+		x_pos = LOGISTIC_AREA/2 - 2 + i * LOGISTIC_AREA
+		pole_x_pos = x_pos - LOGISTIC_AREA/2
+		place(primitives, pole_x_pos, base_y, primitive_types.big_pole)
+		place(primitives, x_pos, base_y, primitive_types.roboport)
+		# power pole for roboport, on its left
+		place(primitives, x_pos - 2, base_y, primitive_types.big_pole)
+
+	return primitives

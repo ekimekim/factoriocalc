@@ -27,11 +27,13 @@ class _Entities(object):
 	pump = 'pump'
 	belt = 'express belt'
 	underground_belt = 'express underground belt'
-	medium_pole = 'medium electric power pole'
+	medium_pole = 'medium-electric-pole'
+	big_pole = 'big-electric-pole'
 	beacon = 'beacon'
-	inserter = 'stack inserter'
+	inserter = 'stack-inserter'
 	assembler = 'assembly-machine-3'
 	splitter = 'express belt splitter'
+	roboport = 'roboport'
 
 	# checked
 	speed_module = 'speed-module-3'
@@ -56,6 +58,22 @@ underpass_belt = [
 ]
 
 
-# Single-entity primitives
+# A bus underground pipe for going under a roboport row
+roboport_underpass_pipe = [
+	entity(0, 0, E.underground_pipe, DOWN),
+	entity(0, 6, E.underground_pipe, UP),
+]
+
+
+# A bus underground belt for going under a roboport row
+roboport_underpass_belt = [
+	entity(0, 0, E.underground_belt, DOWN),
+	entity(0, 6, E.underground_belt, UP),
+]
+
+
+# Single-entity primitives, used directly for simple or fiddly bits in layouter
 medium_pole = [entity(0, 0, E.medium_pole)]
+big_pole = [entity(0, 0, E.big_pole)]
 beacon = [entity(0, 0, E.beacon, items={E.speed_module: 2})]
+roboport = [entity(0, 0, E.roboport)]
