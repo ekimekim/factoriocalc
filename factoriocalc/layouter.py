@@ -285,7 +285,8 @@ def layout_roboport_row(bus, base_y, width):
 		# note x pos is the pos we said above, but -2 because that's measuring from the center,
 		# not the top-left.
 		x_pos = LOGISTIC_AREA/2 - 2 + i * LOGISTIC_AREA
-		pole_x_pos = max(0, x_pos - LOGISTIC_AREA/2)
+		# place left-most pole at 2 to align with other rows
+		pole_x_pos = max(2, x_pos - LOGISTIC_AREA/2)
 		place(primitives, pole_x_pos, base_y, primitive_types.big_pole)
 		place(primitives, x_pos, base_y, primitive_types.roboport)
 		# power pole for roboport, on its left

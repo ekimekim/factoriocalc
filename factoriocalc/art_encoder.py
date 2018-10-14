@@ -68,6 +68,21 @@ class ArtEncoder(object):
 		E.big_pole: [['\\', '/'], ['/', '\\']],
 		E.beacon: boxed('B'),
 		E.roboport: boxed('R', n=4),
+		E.pipe: green([['=']]),
+		E.underground_pipe: lambda obj: green([[
+			{
+				0: '∪',
+				1: '⊂',
+				2: '∩',
+				3: '⊃',
+			}[obj.orientation]
+		]]),
+		E.pump: lambda obj: green({ # large P denotes output end
+			0: [['P'], ['p']],
+			1: [['p', 'P']],
+			2: [['p'], ['P']],
+			1: [['P', 'p']],
+		}[obj.orientation]),
 	}
 
 	def __init__(self, error_on_conflict=True):
@@ -100,5 +115,5 @@ class ArtEncoder(object):
 						raise ValueError("Blueprint has overlapping objects at ({}, {}): Tried to overwrite {} with {}".format(
 							this_x, this_y, grid[this_y][this_x], char
 						))
-					char = forecolor('!', color=1, bold=True)
+					char = red('!', bold=True)
 				grid[this_y][this_x] = char
