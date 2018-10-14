@@ -68,8 +68,8 @@ def place(list, x, y, primitive):
 # This gets in the way of the y-slot for 2 tiles, but we assume there'll never be
 # more than 4 of these in a row, so a blue underground belt can still pass under.
 
-# start bus at 2 so we can have a line of power on left
-BUS_START_X = 2
+# start bus at 4 so we can have a line of power and roboports on left
+BUS_START_X = 4
 
 
 def flatten(primitives):
@@ -86,13 +86,37 @@ def flatten(primitives):
 	return entities
 
 
-def layout(steps):
+def layout(steps, final_bus):
 	"""Converts a list of Placements and Compactions into
 	a collection of Primitives."""
+	# Our main concerns in this top-level function are intra-row details:
+	# * Beacon widths (needs to cover the extremes of above and below rows)
+	# * Insert a roboport+radar line every 10 rows,
+	#   so that all entities are covered by construction area
+	ROW_SIZE = 10 # each step is separated by 10 y-units
+	ROWS_PER_ROBOPORT_AREA = 10 # roboports every 10 rows
 	primitives = []
+	roboport_rows = [] # list of (bus, y pos)
 	prev_beacon_start = None
 	prev_beacon_end = 0
-	for step, base_y in zip(steps, count(3, 10)):
+	base_y = 3 # leave room for top beacon row before first row
+	steps_since_roboports = ROWS_PER_ROBOPORT_AREA / 2 # since there's no roboports above, start "halfway" through a roboport section
+	max_width = 0
+	for step in steps:
+		# check if we need roboport row
+		if steps_since_roboports >= ROWS_PER_ROBOPORT_AREA:
+			assert steps_since_roboports == ROWS_PER_ROBOPORT_AREA
+			# add beacons for bottom of row above if needed
+			if prev_beacon_start is not None:
+				primitives += layout_beacons(base_y - 3, prev_beacon_start, prev_beacon_end)
+			# mark down where this roboport row will go for later, along with the relevant bus
+			roboport_rows.append((step.bus, base_y))
+			# adjust state for upcoming step
+			prev_beacon_start = None
+			prev_beacon_end = 0
+			base_y += 3 + 4 # 3 for beacons, 4 for roboports
+			steps_since_roboports = 0
+
 		p, beacon_start, beacon_end = layout_step(step, base_y)
 		primitives += p
 		# add beacon row above this step
@@ -101,8 +125,25 @@ def layout(steps):
 			(min(beacon_start, prev_beacon_start) if prev_beacon_start is not None else beacon_start),
 			max(beacon_end, prev_beacon_end),
 		)
+		# advance state
 		prev_beacon_start = beacon_start
 		prev_beacon_end = beacon_end
+		if beacon_end > max_width:
+			max_width = beacon_end
+		base_y += ROW_SIZE
+		steps_since_roboports += 1
+
+	# final beacon row, unless we ended in something weird (eg. roboport row)
+	if prev_beacon_start is not None:
+		primitives += layout_beacons(base_y - 3, prev_beacon_start, prev_beacon_end)
+	# check if we need a final row of roboports so that last row is in range
+	if steps_since_roboports > ROWS_PER_ROBOPORT_AREA / 2:
+		roboport_rows.append((final_bus, base_y))
+
+	# resolve roboport rows now that we know max width
+	for bus, base_y in roboport_rows:
+		primitives += layout_roboport_row(bus, base_y, max_width)
+
 	return primitives
 
 
@@ -195,3 +236,10 @@ def layout_process(step, base_x, base_y):
 	* the end point of the process in the x axis, ie. base_x + width.
 	"""
 	return [], base_x # TODO
+
+
+def layout_roboport_row(bus, base_y, width):
+	"""Return primitives for a row of roboports covering an x region out to width,
+	including the bus lines needed.
+	"""
+	return [] # TODO

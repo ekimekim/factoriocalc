@@ -74,7 +74,7 @@ def main(items, data_path='./factorio_recipes', stop_items=''):
 	print "Bus: {}".format(format_bus(manager.bus))
 
 	print "=== Layouter stage ==="
-	primitives = layout(manager.output)
+	primitives = layout(manager.output, manager.bus)
 	for p in primitives:
 		print "{}: {}".format(p.position, ", ".join(map(str, p.primitive)))
 
