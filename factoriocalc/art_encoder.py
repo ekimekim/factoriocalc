@@ -6,13 +6,15 @@ from .primitives import E
 
 # art formatters
 
-def boxed(c):
-	"""Creates a 3x3 box with char c in the middle"""
-	return [
-		["┌", "─", "┐"],
-		["│",   c, "│"],
-		["└", "─", "┘"],
-	]
+def boxed(c, n=3):
+	"""Creates a NxN box (default 3) with char c as fill"""
+	i = n - 2 # interior size
+	c = list(c)
+	return (
+		    [["┌"] + i*["─"] + ["┐"]]
+		+ i*[["│"] + i*  c   + ["│"]]
+		+   [["└"] + i*["─"] + ["┘"]]
+	)
 
 def forecolor(content, color=8, bold=False):
 	if not isinstance(content, basestring):
@@ -63,7 +65,9 @@ class ArtEncoder(object):
 			1: [['S'], ['S']],
 		}[obj.orientation % 2]),
 		E.medium_pole: [['o']],
+		E.big_pole: [['\\', '/'], ['/', '\\']],
 		E.beacon: boxed('B'),
+		E.roboport: boxed('R', n=4),
 	}
 
 	def encode(self, blueprint):
