@@ -177,9 +177,9 @@ def pipe_ramp(y_slot):
 #  =
 #  ...
 #  =
-#  ==   y_slot
+#  =⊃   y_slot
 def pipe_offramp_all(y_slot):
-	return [entity(0, i, E.pipe) for i in range(y_slot + 3)] + [entity(1, y_slot + 2, E.pipe)]
+	return [entity(0, i, E.pipe) for i in range(y_slot + 3)] + [entity(1, y_slot + 2, E.underground_pipe, LEFT)]
 
 
 # Move output from an underground belt to the right of (1, 0)
@@ -190,6 +190,15 @@ def pipe_offramp_all(y_slot):
 #  v
 def belt_onramp_all(height):
 	return belt(0, 0, DOWN, height + 1) + [belt_from_ground(1, 0, LEFT)]
+
+
+# As belt_onramp_all but for pipes
+#  =⊃
+#  =
+#  ...
+#  =
+def pipe_onramp_all(height):
+	return [entity(0, i, E.pipe) for i in range(height + 1)] + [entity(1, 0, E.underground_pipe, LEFT)]
 
 
 # Single-entity primitives, used directly for simple or fiddly bits in layouter
