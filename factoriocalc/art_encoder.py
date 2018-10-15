@@ -58,7 +58,7 @@ class ArtEncoder(object):
 				1: '⊂',
 				2: '∩',
 				3: '⊃',
-			}[obj.orientation]
+			}[(obj.orientation + (2 if obj.attrs['type'] == 'input' else 0)) % 4]
 		]]),
 		E.splitter: lambda obj: blue({
 			0: [['S', 'S']],

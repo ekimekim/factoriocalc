@@ -2,6 +2,7 @@
 
 
 from collections import namedtuple
+from functools import partial
 
 from .util import Point, UP, RIGHT, DOWN, LEFT
 
@@ -51,6 +52,10 @@ class _Entities(object):
 E = _Entities()
 
 
+belt_to_ground = lambda x, y, o: entity(x, y, E.underground_belt, o, type='input')
+belt_from_ground = lambda x, y, o: entity(x, y, E.underground_belt, o, type='output')
+
+
 # Primitives, which are lists of Entity.
 
 
@@ -63,8 +68,8 @@ underpass_pipe = [
 
 # A bus underground belt going under the working area
 underpass_belt = [
-	entity(0, 0, E.underground_belt, DOWN),
-	entity(0, 9, E.underground_belt, UP),
+	belt_to_ground(0, 0, DOWN),
+	belt_from_ground(0, 9, DOWN),
 ]
 
 
@@ -77,8 +82,8 @@ roboport_underpass_pipe = [
 
 # A bus underground belt for going under a roboport row
 roboport_underpass_belt = [
-	entity(0, 0, E.underground_belt, DOWN),
-	entity(0, 6, E.underground_belt, UP),
+	belt_to_ground(0, 0, DOWN),
+	belt_from_ground(0, 6, DOWN),
 ]
 
 
@@ -96,8 +101,8 @@ def belt(base_x, base_y, orientation, length):
 def belt_surface(orientation):
 	delta = orientation_to_vector(orientation)
 	return [
-		entity(0, 0, E.underground_belt, orientation),
-		entity(delta.x, delta.y, E.underground_belt, orientation),
+		belt_from_ground(0, 0, orientation),
+		belt_to_ground(delta.x, delta.y, orientation),
 	]
 
 
@@ -133,10 +138,10 @@ def belt_offramp(y_slot):
 		+ [
 			entity(0, y_slot, E.splitter, DOWN, output_priority='right'),
 			entity(0, y_slot + 1, E.belt, DOWN),
-			entity(1, y_slot + 1, E.underground_belt, DOWN),
+			belt_to_ground(1, y_slot + 1, DOWN),
 			entity(0, y_slot + 2, E.belt, RIGHT),
-			entity(1, y_slot + 2, E.underground_belt, RIGHT),
-			entity(1, y_slot + 3, E.underground_belt, UP),
+			belt_to_ground(1, y_slot + 2, RIGHT),
+			belt_from_ground(1, y_slot + 3, DOWN),
 			entity(0, y_slot + 4, E.belt, DOWN),
 			entity(1, y_slot + 4, E.belt, LEFT),
 		] +
@@ -152,7 +157,7 @@ def belt_offramp(y_slot):
 def belt_offramp_all(y_slot):
 	return belt(0, 0, DOWN, y_slot + 2) + [
 		entity(0, y_slot + 2, E.belt, RIGHT),
-		entity(1, y_slot + 2, E.underground_belt, RIGHT),
+		belt_to_ground(1, y_slot + 2, RIGHT),
 	]
 
 
@@ -184,7 +189,7 @@ def pipe_offramp_all(y_slot):
 #  ...
 #  v
 def belt_onramp_all(height):
-	return belt(0, 0, DOWN, height + 1) + [entity(1, 0, E.underground_belt, LEFT)]
+	return belt(0, 0, DOWN, height + 1) + [belt_from_ground(1, 0, LEFT)]
 
 
 # Single-entity primitives, used directly for simple or fiddly bits in layouter
