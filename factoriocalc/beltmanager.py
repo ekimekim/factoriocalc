@@ -81,7 +81,8 @@ class BeltManager(object):
 		inputs = {}
 		inputs_by_throughput = sorted(step.inputs().items(), key=lambda (i, t): -t) # highest to lowest
 		# highest throughput input goes in top y slot
-		for y_slot, (input, throughput) in enumerate(inputs_by_throughput):
+		# NOTE: We avoid using y_slot 0 as this is hard to fit into the available space
+		for y_slot, (input, throughput) in zip(range(1, 7), inputs_by_throughput):
 			lines = self.find_lines(input, throughput)
 			# pick least loaded matching line first, falling back to rightmost.
 			line_num, line = min(lines, key=lambda (i, l): (l.throughput, -i))
@@ -98,6 +99,7 @@ class BeltManager(object):
 			# for now, always allocate a new line for each output, we can compress later.
 			line_num = self.add_line(output, throughput)
 			outputs[line_num] = (output, y_slot)
+		assert len(outputs) == len(step.outputs())
 
 		assert not (set(inputs.values()) & set([
 			y_slot for output, y_slot in outputs.values()
