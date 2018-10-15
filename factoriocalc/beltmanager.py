@@ -133,11 +133,13 @@ class BeltManager(object):
 		# by tracking each 2x1 tile section's availability, knowing a lateral movement
 		# reserves a y slot + one tile section every few columns, etc.
 
-		# For now we don't do any shifts, and do compactions in a greedy manner
+		# do compactions in a greedy manner
 		# and without trying to cross-use available space.
+		# if you can't compact and have empty spots to your left, shift.
 
 		prev_bus = list(self.bus)
 		compactions = []
+		shifts = []
 		position = len(self.bus) - 1
 		while position > 0:
 			source = self.bus[position]
@@ -153,24 +155,41 @@ class BeltManager(object):
 					and line.throughput < line_limit(line.item)
 				)
 			]
-			if not candidates:
-				position -= 1
+			if candidates:
+				# Do a compaction.
+				# pick least loaded first, then rightmost
+				dest_pos, dest = min(candidates, key=lambda (i, line): (line.throughput, -i))
+				limit = line_limit(dest.item)
+				if dest.throughput + source.throughput > limit:
+					new_source = source._replace(throughput = dest.throughput + source.throughput - limit)
+					assert new_source.throughput < limit
+					new_dest = dest._replace(throughput = limit)
+					self.bus[position] = new_source
+					self.bus[dest_pos] = new_dest
+				else:
+					new_dest = dest._replace(throughput = dest.throughput + source.throughput)
+					self.bus[dest_pos] = new_dest
+					self.line_take(position, source.throughput) # delete source line
+				compactions.append((dest_pos, position))
+				position = dest_pos - 1
 				continue
-			# pick least loaded first, then rightmost
-			dest_pos, dest = min(candidates, key=lambda (i, line): (line.throughput, -i))
-			limit = line_limit(dest.item)
-			if dest.throughput + source.throughput > limit:
-				new_source = source._replace(throughput = dest.throughput + source.throughput - limit)
-				assert new_source.throughput < limit
-				new_dest = dest._replace(throughput = limit)
-				self.bus[position] = new_source
-				self.bus[dest_pos] = new_dest
-			else:
-				new_dest = dest._replace(throughput = dest.throughput + source.throughput)
-				self.bus[dest_pos] = new_dest
+
+			# can't compact, consider shifting.
+			shift_to = position
+			# scan left until first non-None (or we hit edge)
+			while shift_to > 0 and self.bus[shift_to - 1] is None:
+				shift_to -= 1
+			if shift_to != position:
+				# Do a shift.
+				self.bus[shift_to] = self.bus[position]
 				self.line_take(position, source.throughput) # delete source line
-			compactions.append((dest_pos, position))
-			position = dest_pos - 1
+				shifts.append((position, shift_to))
+				position = shift_to - 1
+				continue
+
+			# no compact or shift, just step left and try again
+			position -= 1
+
 
 		if not compactions:
 			raise ValueError("Could not compact bus any further")
@@ -179,7 +198,7 @@ class BeltManager(object):
 			bus = prev_bus,
 			width = len(prev_bus), # bus width never grows here, only shrinks
 			compactions = compactions,
-			shifts = [],
+			shifts = shifts,
 		))
 
 	def find_lines(self, input, throughput):
