@@ -1,19 +1,9 @@
 
 import math
-from collections import namedtuple
 
-from . import primitives as primitive_types
+from . import primitives
 from .beltmanager import Placement
-from .util import is_liquid, Point, UP, RIGHT, DOWN, LEFT
-
-
-PlacedPrimitive = namedtuple('PlacedPrimitive', [
-	'position', # Point of upper left corner
-	'primitive', # Primitive to place
-])
-
-def place(list, x, y, primitive):
-	list.append(PlacedPrimitive(Point(x, y), primitive))
+from .util import is_liquid, UP, RIGHT, DOWN, LEFT, Layout
 
 
 # Notes:
@@ -72,20 +62,6 @@ def place(list, x, y, primitive):
 BUS_START_X = 4
 
 
-def flatten(primitives):
-	"""Flatten a list of primitives to a list of entities"""
-	entities = []
-	for primitive in primitives:
-		for entity in primitive.primitive:
-			entities.append(entity._replace(
-				position=Point(
-					entity.position.x + primitive.position.x,
-					entity.position.y + primitive.position.y,
-				)
-			))
-	return entities
-
-
 def layout(steps, final_bus):
 	"""Converts a list of Placements and Compactions into
 	a collection of Primitives."""
@@ -95,7 +71,7 @@ def layout(steps, final_bus):
 	#   so that all entities are covered by construction area
 	ROW_SIZE = 10 # each step is separated by 10 y-units
 	ROWS_PER_ROBOPORT_AREA = 10 # roboports every 10 rows
-	primitives = []
+	layout = Layout('root')
 	roboport_rows = [] # list of (bus, y pos)
 	prev_beacon_start = None
 	prev_beacon_end = 0
@@ -108,7 +84,7 @@ def layout(steps, final_bus):
 			assert steps_since_roboports == ROWS_PER_ROBOPORT_AREA
 			# add beacons for bottom of row above if needed
 			if prev_beacon_start is not None:
-				primitives += layout_beacons(base_y - 3, prev_beacon_start, prev_beacon_end)
+				layout.place(0, base_y - 3, layout_beacons(prev_beacon_start, prev_beacon_end))
 			# mark down where this roboport row will go for later, along with the relevant bus
 			roboport_rows.append((step.bus, base_y))
 			# adjust state for upcoming step
@@ -117,14 +93,12 @@ def layout(steps, final_bus):
 			base_y += 3 + 4 # 3 for beacons, 4 for roboports
 			steps_since_roboports = 0
 
-		p, beacon_start, beacon_end = layout_step(step, base_y)
-		primitives += p
+		step_layout, beacon_start, beacon_end = layout_step(step)
+		layout.place(0, base_y, step_layout)
 		# add beacon row above this step
-		primitives += layout_beacons(
-			base_y - 3,
-			(min(beacon_start, prev_beacon_start) if prev_beacon_start is not None else beacon_start),
-			max(beacon_end, prev_beacon_end),
-		)
+		row_start = min(beacon_start, prev_beacon_start) if prev_beacon_start is not None else beacon_start
+		row_end = max(beacon_end, prev_beacon_end)
+		layout.place(row_start, base_y - 3, layout_beacons(row_end - row_start))
 		# advance state
 		prev_beacon_start = beacon_start
 		prev_beacon_end = beacon_end
@@ -135,41 +109,43 @@ def layout(steps, final_bus):
 
 	# final beacon row, unless we ended in something weird (eg. roboport row)
 	if prev_beacon_start is not None:
-		primitives += layout_beacons(base_y - 3, prev_beacon_start, prev_beacon_end)
+		layout.place(prev_beacon_start, base_y - 3, layout_beacons(prev_beacon_end - prev_beacon_start))
 	# check if we need a final row of roboports so that last row is in range
 	if steps_since_roboports > ROWS_PER_ROBOPORT_AREA / 2:
 		roboport_rows.append((final_bus, base_y))
 
 	# resolve roboport rows now that we know max width
 	for bus, base_y in roboport_rows:
-		primitives += layout_roboport_row(bus, base_y, max_width)
+		layout.place(0, base_y, layout_roboport_row(bus, max_width))
 
-	return primitives
+	return layout
 
 
-def layout_step(step, base_y):
-	"""Layout given step with y value of the top of the processing area being base_y.
+def layout_step(step):
+	"""Layout given step with y value of the top of the processing area being y=0.
 	Returns:
-		primitives
+		layout
 		x position to start beacons at
 		how long beacon rows above and below must extend
 	"""
+	layout = Layout(str(step))
 	bus_width = step.width * 2
 	padding = 3 - (bus_width + BUS_START_X) % 3
 	process_base_x = bus_width + BUS_START_X + padding
 	assert process_base_x % 3 == 0
 
-	primitives = layout_bus(step, process_base_x, base_y)
+	layout.place(0, 0, layout_bus(step, process_base_x))
 	if isinstance(step, Placement):
-		p, process_end = layout_process(step, process_base_x, base_y)
-		primitives += p
+		process_layout, process_width = layout_process(step)
+		layout.place(process_base_x, 0, process_layout)
 	else:
-		process_end = process_base_x
+		process_width = 0
+	process_end = process_width + process_base_x
 
-	return primitives, process_base_x, process_end
+	return layout, process_base_x, process_end
 
 
-def layout_bus(step, process_base_x, base_y):
+def layout_bus(step, process_base_x):
 	"""Layout the bus area for the given step. This includes:
 	* Running power along the bus
 	* Running unused lines through to the step below
@@ -179,13 +155,13 @@ def layout_bus(step, process_base_x, base_y):
 	* Onramping outputs to the bus below
 	If Compaction:
 	* Performing compactions and shifts
-	Returns list of primitives.
+	Returns layout.
 	"""
-	primitives = []
+	layout = Layout("bus")
 
 	# infra column - roboport with big pole below it
-	place(primitives, 0, base_y - 3, primitive_types.roboport)
-	place(primitives, 2, base_y + 1, primitive_types.big_pole)
+	layout.place(0, -3, primitives.roboport)
+	layout.place(2, 1, primitives.big_pole)
 
 	# underpasses and power poles
 	if isinstance(step, Placement):
@@ -196,41 +172,41 @@ def layout_bus(step, process_base_x, base_y):
 		bus_x = BUS_START_X + 2 * bus_pos
 		# unused lines get underpasses
 		if bus_pos not in used and line is not None:
-			primitive = primitive_types.underpass_pipe if is_liquid(line.item) else primitive_types.underpass_belt
-			place(primitives, bus_x, base_y-2, primitive)
+			primitive = primitives.underpass_pipe if is_liquid(line.item) else primitives.underpass_belt
+			layout.place(bus_x, -2, primitive)
 		# used, unused or blank, doesn't matter. Every 4 lines + the last line gets a pole.
 		if bus_pos % 4 == 0 or bus_pos == len(step.bus) - 1:
-			place(primitives, bus_x+1, base_y-2, primitive_types.medium_pole)
+			layout.place(bus_x + 1, -2, primitives.medium_pole)
 
 	if isinstance(step, Placement):
-		primitives += layout_in_outs(step, process_base_x, base_y)
+		layout.place(0, 0, layout_in_outs(step, process_base_x))
 	else:
-		primitives += layout_compaction(step, base_y)
-	return primitives
+		layout.place(0, 0, layout_compaction(step))
+	return layout
 
 
-def layout_beacons(y, x_start, x_end):
-	primitives = []
-	for x in range(x_start, x_end + 3, 3):
-		place(primitives, x, y, primitive_types.beacon)
-	return primitives
+def layout_beacons(width):
+	layout = Layout("beacons")
+	for x in range(int(math.ceil(width / 3))):
+		layout.place(3*x, 0, primitives.beacon)
+	return layout
 
 
-def layout_in_outs(step, process_base_x, base_y):
-	"""Return the list of primitives needed to connect inputs and outputs
+def layout_in_outs(step, process_base_x):
+	"""Return the parts needed to connect inputs and outputs
 	from the bus to the process.
 	"""
 	# Each in-out has two parts:
 	# * The actual split or join component, which occupies
-	#   the area (line_x, base_y - 2) to (line_x + 1, base_y + 8)
+	#   the area (line_x, -2) to (line_x + 1, 8)
 	# * The line running horizontally from that component to the edge of the process area,
-	#   which must run on the assigned y_slot (y = base_y + y_slot) and go under any
+	#   which must run on the assigned y_slot and go under any
 	#   split/join components between it and the process.
 	# Note: Since we can only go under 8 tiles max, it may end up that >4 split/joins back-to-back
 	# prevent a 5th inout from running under them. But this is extremely unlikely, so we're just
 	# going to die if we encounter it and hope we don't.
 
-	primitives = []
+	layout = Layout("in-outs")
 
 	# Set up some vars for horiz_line
 	used = set(step.inputs.keys() + step.outputs.keys()) # bus indexes that have an on/off ramp
@@ -249,12 +225,11 @@ def layout_in_outs(step, process_base_x, base_y):
 	def horiz_line(item, bus_index, y_slot, orientation):
 		# Assumes up-line at bus_index is already placed.
 		# Runs from left to right working out valid positions.
-		primitive_fn = primitive_types.pipe_surface if is_liquid(item) else primitive_types.belt_surface
+		primitive_fn = primitives.pipe_surface if is_liquid(item) else primitives.belt_surface
 		primitive = primitive_fn(orientation)
-		place_at_index = lambda i: place(
-			primitives,
+		place_at_index = lambda i: layout.place(
 			BUS_START_X + 2 * i + (1 if orientation == LEFT else 0),
-			base_y + y_slot,
+			y_slot,
 			primitive,
 		)
 		# We keep trying to go 4 indexes (8 tiles) at a time, if we're blocked
@@ -277,13 +252,13 @@ def layout_in_outs(step, process_base_x, base_y):
 		line_ends = line.throughput == step.process.inputs()[line.item]
 		# map from (liquid, ends) to primitive func to call as f(y_slot)
 		primitive = {
-			(False, False): primitive_types.belt_offramp,
-			(False, True): primitive_types.belt_offramp_all,
-			(True, False): primitive_types.pipe_ramp,
-			(True, True): primitive_types.pipe_offramp_all,
+			(False, False): primitives.belt_offramp,
+			(False, True): primitives.belt_offramp_all,
+			(True, False): primitives.pipe_ramp,
+			(True, True): primitives.pipe_offramp_all,
 		}[is_liquid(line.item), line_ends](y_slot)
 		# place the off-ramp
-		place(primitives, bus_x, base_y - 2, primitive)
+		layout.place(bus_x, -2, primitive)
 		# run the line right to the end of the bus
 		horiz_line(line.item, bus_index, y_slot, RIGHT)
 
@@ -292,37 +267,37 @@ def layout_in_outs(step, process_base_x, base_y):
 		bus_x = BUS_START_X + 2 * bus_index
 		# XXX later, support joining with existing line instead of only adding new
 		primitive = (
-			primitive_types.pipe_onramp_all(7 - y_slot)
+			primitives.pipe_onramp_all(7 - y_slot)
 			if is_liquid(item) else
-			primitive_types.belt_onramp_all(7 - y_slot)
+			primitives.belt_onramp_all(7 - y_slot)
 		)
 		# place the on-ramp
-		place(primitives, bus_x, base_y + y_slot, primitive)
+		layout.place(bus_x, y_slot, primitive)
 		# run the line left from end of bus to here
 		horiz_line(item, bus_index, y_slot, LEFT)
 
-	return primitives
+	return layout
 
 
-def layout_compaction(step, base_y):
-	"""Return the list of primitives needed to perform the compactions and shifts."""
+def layout_compaction(step):
+	"""Return the layout needed to perform the compactions and shifts."""
 	return [] # TODO
 
 
-def layout_process(step, base_x, base_y):
+def layout_process(step):
 	"""Choose the process primitives to use for this Placement and lay them out.
 	Returns:
-	* list of primitives
-	* the end point of the process in the x axis, ie. base_x + width.
+	* layout
+	* the end point of the process in the x axis, ie. the width.
 	"""
-	return [], base_x # TODO
+	return [], 0 # TODO
 
 
-def layout_roboport_row(bus, base_y, width):
-	"""Return primitives for a row of roboports covering an x region out to width,
+def layout_roboport_row(bus, width):
+	"""Return layout for a row of roboports covering an x region out to width,
 	including the bus lines needed.
 	"""
-	primitives = []
+	layout = Layout("roboports")
 
 	# Underpasses. Note these are shorter underpasses, without pumps.
 	for bus_pos, line in enumerate(bus):
@@ -330,11 +305,11 @@ def layout_roboport_row(bus, base_y, width):
 			continue
 		bus_x = BUS_START_X + 2 * bus_pos
 		primitive = (
-			primitive_types.roboport_underpass_pipe
+			primitives.roboport_underpass_pipe
 			if is_liquid(line.item) else
-			primitive_types.roboport_underpass_belt
+			primitives.roboport_underpass_belt
 		)
-		place(primitives, bus_x, base_y-2, primitive)
+		layout.place(bus_x, -2, primitive)
 
 	# Roboport areas
 	LOGISTIC_AREA = 50
@@ -362,9 +337,9 @@ def layout_roboport_row(bus, base_y, width):
 		x_pos = LOGISTIC_AREA/2 - 2 + i * LOGISTIC_AREA
 		# place left-most pole at 2 to align with other rows
 		pole_x_pos = max(2, x_pos - LOGISTIC_AREA/2)
-		place(primitives, pole_x_pos, base_y, primitive_types.big_pole)
-		place(primitives, x_pos, base_y, primitive_types.roboport)
+		layout.place(pole_x_pos, 0, primitives.big_pole)
+		layout.place(x_pos, 0, primitives.roboport)
 		# power pole for roboport, on its left
-		place(primitives, x_pos - 2, base_y, primitive_types.big_pole)
+		layout.place(x_pos - 2, 0, primitives.big_pole)
 
-	return primitives
+	return layout
