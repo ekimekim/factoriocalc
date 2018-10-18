@@ -90,26 +90,26 @@ class ArtEncoder(object):
 
 	def encode(self, blueprint):
 		"""As with all blueprint encoders, the incoming blueprint should be
-		a list of Entities."""
+		a list of (Point, Entity)."""
 		# biggest entities are 5x5
-		width = max(obj.position.x for obj in blueprint) + 5
-		height = max(obj.position.y for obj in blueprint) + 5
+		width = max(pos.x for pos, obj in blueprint) + 5
+		height = max(pos.y for pos, obj in blueprint) + 5
 		grid = [[self.EMPTY] * width for _ in range(height)]
 
-		for obj in blueprint:
-			if obj.position.x < 0 or obj.position.y < 0:
+		for pos, obj in blueprint:
+			if pos.x < 0 or pos.y < 0:
 				raise ValueError("Blueprint has entity with out of bounds position: {}".format(obj))
 			art = self.ART.get(obj.name, bold([['?']]))
 			if callable(art):
 				art = art(obj)
-			self.blit(grid, obj.position.x, obj.position.y, art)
+			self.blit(grid, pos, art)
 
 		return '\n'.join([''.join(row) for row in grid])
 
-	def blit(self, grid, x, y, art):
+	def blit(self, grid, pos, art):
 		for dy, row in enumerate(art):
 			for dx, char in enumerate(row):
-				this_x, this_y = x + dx, y + dy
+				this_x, this_y = pos.x + dx, pos.y + dy
 				if grid[this_y][this_x] != self.EMPTY:
 					if self.error_on_conflict:
 						raise ValueError("Blueprint has overlapping objects at ({}, {}): Tried to overwrite {} with {}".format(

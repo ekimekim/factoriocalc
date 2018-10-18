@@ -84,7 +84,7 @@ def layout(steps, final_bus):
 			assert steps_since_roboports == ROWS_PER_ROBOPORT_AREA
 			# add beacons for bottom of row above if needed
 			if prev_beacon_start is not None:
-				layout.place(0, base_y - 3, layout_beacons(prev_beacon_start, prev_beacon_end))
+				layout.place(prev_beacon_start, base_y - 3, layout_beacons(prev_beacon_end - prev_beacon_start))
 			# mark down where this roboport row will go for later, along with the relevant bus
 			roboport_rows.append((step.bus, base_y))
 			# adjust state for upcoming step
@@ -281,7 +281,7 @@ def layout_in_outs(step, process_base_x):
 
 def layout_compaction(step):
 	"""Return the layout needed to perform the compactions and shifts."""
-	return [] # TODO
+	return Layout("compaction TODO") # TODO
 
 
 def layout_process(step):
@@ -290,7 +290,7 @@ def layout_process(step):
 	* layout
 	* the end point of the process in the x axis, ie. the width.
 	"""
-	return [], 0 # TODO
+	return Layout("process TODO"), 0 # TODO
 
 
 def layout_roboport_row(bus, width):

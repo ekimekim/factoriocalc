@@ -11,10 +11,15 @@ class Layout(object):
 	(a game object with an x and y coord) and sub-layouts.
 	Positions of both entities and sub-layouts are relative to the layout's position.
 	"""
-	def __init__(self, name):
-		self.name = name # name is a friendly string for debugging
+	def __init__(self, name, *to_place):
+		"""Name is a friendly string, mainly for debugging.
+		to_place is an optional list of initial (x, y, entity or sublayout) values.
+		"""
+		self.name = name
 		self.sublayouts = [] # list of (position, sub-layout)
 		self.entities = [] # list of (position, entitiy)
+		for x, y, child in to_place:
+			self.place(x, y, child)
 
 	def place(self, x, y, child):
 		"""Child may be entity or sub-layout"""

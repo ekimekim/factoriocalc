@@ -4,7 +4,7 @@ from fractions import Fraction
 from .datafile import Datafile
 from .calculator import Calculator, split_into_steps
 from .beltmanager import BeltManager, Placement, Compaction
-from .layouter import layout, flatten
+from .layouter import layout
 from .art_encoder import ArtEncoder
 
 
@@ -77,14 +77,13 @@ def main(items, data_path='./factorio_recipes', stop_items='', show_conflicts=Fa
 	v("Bus: {}".format(format_bus(manager.bus)))
 
 	v("=== Layouter stage ===")
-	primitives = layout(manager.output, manager.bus)
-	for p in primitives:
-		v("{}: {}".format(p.position, ", ".join(map(str, p.primitive))))
+	l = layout(manager.output, manager.bus)
+	v(l)
 
 	v("=== Flattener stage ===")
-	entities = flatten(primitives)
-	for e in entities:
-		v(e)
+	entities = l.flatten()
+	for pos, e in entities:
+		v("{}, {}: {}".format(pos.x, pos.y, e))
 
 	v("=== Encoder stage ===")
 	print ArtEncoder(error_on_conflict = not show_conflicts).encode(entities)

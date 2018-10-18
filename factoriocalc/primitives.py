@@ -24,9 +24,8 @@ Entity = namedtuple('Entity', [
 	'attrs', # arbitrary extra attributes {attr: value}, should match Entity keys in blueprint format
 ])
 
-def entity(x, y, name, orientation=None, **attrs):
-	"""Returns a (pos, entity) tuple"""
-	return Point(x, y), Entity(name, orientation, attrs)
+def entity(name, orientation=None, **attrs):
+	return Entity(name, orientation, attrs)
 
 
 # A mapping from easy internal names to official names
@@ -51,8 +50,8 @@ class _Entities(object):
 E = _Entities()
 
 
-belt_to_ground = lambda x, y, o: entity(x, y, E.underground_belt, o, type='input')
-belt_from_ground = lambda x, y, o: entity(x, y, E.underground_belt, o, type='output')
+belt_to_ground = lambda o: entity(E.underground_belt, o, type='input')
+belt_from_ground = lambda o: entity(E.underground_belt, o, type='output')
 
 
 # Primitives, which are Layouts or Entities.
@@ -60,46 +59,46 @@ belt_from_ground = lambda x, y, o: entity(x, y, E.underground_belt, o, type='out
 
 # A bus pipe with pump, plus underground pipe going under the working area
 underpass_pipe = Layout('underpass pipe',
-	entity(0, 0, E.pump, DOWN),
-	entity(0, 2, E.underground_pipe, DOWN),
-	entity(0, 9, E.underground_pipe, UP),
+	(0, 0, entity(E.pump, DOWN)),
+	(0, 2, entity(E.underground_pipe, DOWN)),
+	(0, 9, entity(E.underground_pipe, UP)),
 )
 
 # A bus underground belt going under the working area
 underpass_belt = Layout('underpass belt',
-	belt_to_ground(0, 0, DOWN),
-	belt_from_ground(0, 9, DOWN),
+	(0, 0, belt_to_ground(DOWN)),
+	(0, 9, belt_from_ground(DOWN)),
 )
 
 
 # A bus underground pipe for going under a roboport row
 roboport_underpass_pipe = Layout('roboport underpass pipe',
-	entity(0, 0, E.underground_pipe, DOWN),
-	entity(0, 6, E.underground_pipe, UP),
+	(0, 0, entity(E.underground_pipe, DOWN)),
+	(0, 6, entity(E.underground_pipe, UP)),
 )
 
 
 # A bus underground belt for going under a roboport row
 roboport_underpass_belt = Layout('roboport underpass belt',
-	belt_to_ground(0, 0, DOWN),
-	belt_from_ground(0, 6, DOWN),
+	(0, 0, belt_to_ground(DOWN)),
+	(0, 6, belt_from_ground(DOWN)),
 )
 
 
 # Run a length of belt in the specified direction for specified length.
-def belt(x, y, orientation, length):
+def belt(orientation, length):
 	delta = orientation_to_vector(orientation)
-	return Point(x, y), Layout("belt", *[
-		entity(i * delta.x, i * delta.y, E.belt, orientation)
+	return Layout("belt", *[
+		(i * delta.x, i * delta.y, entity(E.belt, orientation))
 		for i in range(length)
 	])
 
 
 # As belt(), but for pipes
-def pipe(x, y, orientation, length):
+def pipe(orientation, length):
 	delta = orientation_to_vector(orientation)
-	return Point(x, y), Layout("pipe", *[
-		entity(i * delta.x, i * delta.y, E.pipe)
+	return Layout("pipe", *[
+		(i * delta.x, i * delta.y, entity(E.pipe))
 		for i in range(length)
 	])
 
@@ -109,8 +108,8 @@ def pipe(x, y, orientation, length):
 def belt_surface(orientation):
 	delta = orientation_to_vector(orientation)
 	return Layout('belt surface',
-		belt_from_ground(0, 0, orientation),
-		belt_to_ground(delta.x, delta.y, orientation),
+		(0, 0, belt_from_ground(orientation)),
+		(delta.x, delta.y, belt_to_ground(orientation)),
 	)
 
 
@@ -118,8 +117,8 @@ def belt_surface(orientation):
 def pipe_surface(orientation):
 	delta = orientation_to_vector(orientation)
 	return Layout('pipe surface',
-		entity(0, 0, E.underground_pipe, orientation),
-		entity(delta.x, delta.y, E.underground_pipe, orientation),
+		(0, 0, entity(E.underground_pipe, orientation)),
+		(delta.x, delta.y, entity(E.underground_pipe, orientation)),
 	)
 
 
@@ -142,16 +141,16 @@ def pipe_surface(orientation):
 #  v
 def belt_offramp(y_slot):
 	return Layout('belt offramp',
-		belt(0, 0, DOWN, y_slot),
-		entity(0, y_slot, E.splitter, DOWN, output_priority='right'),
-		entity(0, y_slot + 1, E.belt, DOWN),
-		belt_to_ground(1, y_slot + 1, DOWN),
-		entity(0, y_slot + 2, E.belt, RIGHT),
-		belt_to_ground(1, y_slot + 2, RIGHT),
-		belt_from_ground(1, y_slot + 3, DOWN),
-		entity(0, y_slot + 4, E.belt, DOWN),
-		entity(1, y_slot + 4, E.belt, LEFT),
-		belt(0, y_slot + 5, DOWN, 5 - y_slot),
+		(0, 0, belt(DOWN, y_slot)),
+		(0, y_slot, entity(E.splitter, DOWN, output_priority='right')),
+		(0, y_slot + 1, entity(E.belt, DOWN)),
+		(1, y_slot + 1, belt_to_ground(DOWN)),
+		(0, y_slot + 2, entity(E.belt, RIGHT)),
+		(1, y_slot + 2, belt_to_ground(RIGHT)),
+		(1, y_slot + 3, belt_from_ground(DOWN)),
+		(0, y_slot + 4, entity(E.belt, DOWN)),
+		(1, y_slot + 4, entity(E.belt, LEFT)),
+		(0, y_slot + 5, belt(DOWN, 5 - y_slot)),
 	)
 
 
@@ -162,9 +161,9 @@ def belt_offramp(y_slot):
 #  >⊃   y_slot
 def belt_offramp_all(y_slot):
 	return Layout('belt offramp all',
-		belt(0, 0, DOWN, y_slot + 2),
-		entity(0, y_slot + 2, E.belt, RIGHT),
-		belt_to_ground(1, y_slot + 2, RIGHT),
+		(0, 0, belt(DOWN, y_slot + 2)),
+		(0, y_slot + 2, entity(E.belt, RIGHT)),
+		(1, y_slot + 2, belt_to_ground(RIGHT)),
 	)
 
 
@@ -178,8 +177,8 @@ def belt_offramp_all(y_slot):
 #  =
 def pipe_ramp(y_slot):
 	return Layout('pipe ramp',
-		pipe(0, 0, DOWN, 10),
-		entity(1, y_slot + 2, E.underground_pipe, LEFT),
+		(0, 0, pipe(DOWN, 10)),
+		(1, y_slot + 2, entity(E.underground_pipe, LEFT)),
 	)
 
 
@@ -190,8 +189,8 @@ def pipe_ramp(y_slot):
 #  =⊃   y_slot
 def pipe_offramp_all(y_slot):
 	return Layout('pipe offramp all',
-		pipe(0, 0, DOWN, y_slot + 3),
-		entity(1, y_slot + 2, E.underground_pipe, LEFT),
+		(0, 0, pipe(DOWN, y_slot + 3)),
+		(1, y_slot + 2, entity(E.underground_pipe, LEFT)),
 	)
 
 
@@ -203,8 +202,8 @@ def pipe_offramp_all(y_slot):
 #  v
 def belt_onramp_all(height):
 	return Layout('belt onramp all',
-		belt(0, 0, DOWN, height + 1),
-		belt_from_ground(1, 0, LEFT),
+		(0, 0, belt(DOWN, height + 1)),
+		(1, 0, belt_from_ground(LEFT)),
 	)
 
 
@@ -215,13 +214,13 @@ def belt_onramp_all(height):
 #  =
 def pipe_onramp_all(height):
 	return Layout('pipe onramp all',
-		pipe(0, 0, DOWN, height + 1),
-		entity(1, 0, E.underground_pipe, LEFT),
+		(0, 0, pipe(DOWN, height + 1)),
+		(1, 0, entity(E.underground_pipe, LEFT)),
 	)
 
 
 # Single-entity primitives, used directly for simple or fiddly bits in layouter
-medium_pole = entity(0, 0, E.medium_pole)
-big_pole = entity(0, 0, E.big_pole)
-beacon = entity(0, 0, E.beacon, items={E.speed_module: 2})
-roboport = entity(0, 0, E.roboport)
+medium_pole = entity(E.medium_pole)
+big_pole = entity(E.big_pole)
+beacon = entity(E.beacon, items={E.speed_module: 2})
+roboport = entity(E.roboport)
