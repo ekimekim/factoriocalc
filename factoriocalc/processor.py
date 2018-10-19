@@ -50,8 +50,8 @@ class Processor(object):
 	Note that a process is responsible for powering beacons above and below,
 	and must pad out enough width that all buildings are maximally covered by beacons.
 	"""
-	# TODO how to handle inserter throughput limits?
 	PROCESSORS = []
+	MAX_INSERT_RATE = 12 # worst case items/sec of stack inserter, TODO confirm value
 
 	def __init__(self, name,
 		building='assembler',
@@ -118,7 +118,23 @@ class Processor(object):
 	def determine_bodies(self, step):
 		"""Work out how many body sections are needed for the given step."""
 		throughput = step.process.throughput
-		throughput_per_building = step.process.recipe.throughput
+		recipe = step.process.recipe
+		throughput_per_building = recipe.throughput
+		# We need to apply a correction step to slow down buildings where any one
+		# (non-liquid) input or output exceeds MAX_INSERT_RATE items/sec.
+		# This is to account for the limit of throughput of a single stack inserter,
+		# and is generally only an issue for things that can't be prod-modded
+		# (so you tend to end up with 4x speed 3s + beacons for a crazy total speed)
+		# XXX Future work: allow a processor to advertise "double inserter" lines
+		# that would let buildings run at full speed as long as only one item is the issue.
+		max_item_rate = max(
+			throughput_per_building * per_output
+			for item, per_output in (recipe.inputs.items() + (recipe.name, 1)) # extra term stands for output
+			if is_liquid(item)
+		)
+		if max_item_rate > self.MAX_INSERT_RATE:
+			# slow down the building to match the speed of insertion of the highest volume item
+			throughput_per_building *= self.MAX_INSERT_RATE / max_item_rate
 		buildings = throughput / throughput_per_building
 		buildings -= self.base_buildings
 		return max(0, int(math.ceil(buildings / self.per_body_buildings)))
