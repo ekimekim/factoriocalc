@@ -1,7 +1,7 @@
 
 from collections import namedtuple
 
-from .util import line_limit
+from .util import line_limit, is_liquid
 
 
 Placement = namedtuple('Placement', [
@@ -77,12 +77,19 @@ class BeltManager(object):
 		"""Apply the given step."""
 		prev_bus = list(self.bus)
 
+		def inout_order((item, throughput)):
+			"""Inputs and outputs are sorted for consistent handling by process layouts.
+			Liquids are first (top-most for inputs, bottom-most for outputs), then solids.
+			Within those categories they are arranged by throughput, with ties broken by name.
+			"""
+			return (0 if is_liquid(item) else 1), -throughput, item
+
 		# pick inputs
 		inputs = {}
-		inputs_by_throughput = sorted(step.inputs().items(), key=lambda (i, t): -t) # highest to lowest
+		inputs_in_order = sorted(step.inputs().items(), key=inout_order)
 		# highest throughput input goes in top y slot
 		# NOTE: We avoid using y_slot 0 as this is hard to fit into the available space
-		for y_slot, (input, throughput) in zip(range(1, 7), inputs_by_throughput):
+		for y_slot, (input, throughput) in zip(range(1, 7), inputs_in_order):
 			lines = self.find_lines(input, throughput)
 			# pick least loaded matching line first, falling back to rightmost.
 			line_num, line = min(lines, key=lambda (i, l): (l.throughput, -i))
@@ -94,8 +101,8 @@ class BeltManager(object):
 		outputs = {}
 		# output slots count up from bottom, highest throughput at bottom
 		y_slots = range(7)[::-1]
-		outputs_by_throughput = sorted(step.outputs().items(), key=lambda (i, t): -t)
-		for y_slot, (output, throughput) in zip(y_slots, outputs_by_throughput):
+		outputs_in_order = sorted(step.outputs().items(), key=inout_order)
+		for y_slot, (output, throughput) in zip(y_slots, outputs_in_order):
 			# for now, always allocate a new line for each output, we can compress later.
 			line_num = self.add_line(output, throughput)
 			outputs[line_num] = (output, y_slot)
