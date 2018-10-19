@@ -301,7 +301,8 @@ def layout_compaction(step):
 		# left part
 		if is_liquid(step.bus[left].item):
 			if not right_ends:
-				raise ValueError("Compacting pipes with overflow doesn't make sense")
+				# TODO. Needs a pump and no return line.
+				raise NotImplementedError("Compaction with overflow for fluids is not implemented")
 			primitive = primitives.compact_pipe
 		else:
 			primitive = primitives.compact_belts if right_ends else primitives.compact_belts_with_overflow
