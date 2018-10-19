@@ -219,13 +219,14 @@ def pipe_onramp_all(height):
 	)
 
 
-# Takes an incoming belt line from the bus and sends it to the left at y slot 0
+# Takes an incoming belt line from the bus and sends it to the left at y slot 1
+#  v
 #  v
 #  v
 #  <
 belt_to_left = Layout('belt to left',
-	(0, 0, belt(DOWN, 2)),
-	(0, 2, entity(E.belt, LEFT)),
+	(0, 0, belt(DOWN, 3)),
+	(0, 3, entity(E.belt, LEFT)),
 )
 
 
@@ -233,7 +234,8 @@ belt_to_left = Layout('belt to left',
 #  =
 #  =
 #  =
-pipe_to_left = pipe(DOWN, 3)
+#  =
+pipe_to_left = pipe(DOWN, 4)
 
 
 # Takes a belt from the left at bottom y slot and sends it down
@@ -254,6 +256,7 @@ pipe_from_left = pipe(DOWN, 2)
 # ie. we always consume left-first.
 #  v
 #  v
+#  v
 #  vv  <- right in
 #  Ss
 #  v<
@@ -261,13 +264,12 @@ pipe_from_left = pipe(DOWN, 2)
 #  v
 #  v
 #  v
-#  v
 compact_belts = Layout('compact belts',
-	(0, 0, belt(DOWN, 3)),
-	(1, 2, entity(E.belt, DOWN)),
-	(0, 3, entity(E.splitter, DOWN, input_priority='right', output_priority='right')),
-	(0, 4, belt(DOWN, 6)),
-	(1, 4, entity(E.belt, LEFT)),
+	(0, 0, belt(DOWN, 4)),
+	(1, 3, entity(E.belt, DOWN)),
+	(0, 4, entity(E.splitter, DOWN, input_priority='right', output_priority='right')),
+	(0, 5, belt(DOWN, 5)),
+	(1, 5, entity(E.belt, LEFT)),
 )
 
 
@@ -276,8 +278,8 @@ compact_belts = Layout('compact belts',
 # The same notes about balancing apply.
 #  v
 #  v
+#  v
 #  vv  <- right in
-#  vv
 #  vv
 #  vv
 #  Ss
@@ -286,7 +288,7 @@ compact_belts = Layout('compact belts',
 #  v
 compact_belts_with_overflow = Layout('compact belts with overflow',
 	(0, 0, belt(DOWN, 6)),
-	(1, 2, belt(DOWN, 4)),
+	(1, 3, belt(DOWN, 3)),
 	(0, 6, entity(E.splitter, DOWN, input_priority='right', output_priority='right')),
 	(0, 7, belt(DOWN, 3)),
 	(1, 7, entity(E.splitter, DOWN, output_priority='right')),
@@ -294,8 +296,8 @@ compact_belts_with_overflow = Layout('compact belts with overflow',
 )
 
 
-# Join two pipes, with the right incoming on y_slot 0
-compact_pipe = pipe_ramp(0)
+# Join two pipes, with the right incoming on y_slot 1
+compact_pipe = pipe_ramp(1)
 
 
 # Single-entity primitives, used directly for simple or fiddly bits in layouter

@@ -286,20 +286,22 @@ def layout_compaction(step):
 
 	# This is fairly simple for now, and any additional capabilities need to be
 	# added both here and in belt manager.
-	# We assume a compaction or shift has full use of space y=(0, 7) between the two lines
+	# We assume a compaction or shift has full use of space y=(1, 7) between the two lines
 	# in question.
 
 	# compactions
 	for left, right in step.compactions:
 		right_ends = step.bus[left].throughput + step.bus[right].throughput <= line_limit(step.bus[left].item)
+		liquid = is_liquid(step.bus[left].item)
+		pipe_or_belt = primitives.pipe if liquid else primitives.belt
 		# right top part
-		layout.place(bus_x(right), -2, primitives.belt_to_left)
+		layout.place(bus_x(right), -2, primitives.pipe_to_left if liquid else primitives.belt_to_left)
 		# right to left line
 		line_right = bus_x(right) - 1
 		line_left = bus_x(left) + 2
-		layout.place(line_right, 0, primitives.belt(LEFT, line_right - line_left))
+		layout.place(line_right, 1, pipe_or_belt(LEFT, line_right - line_left))
 		# left part
-		if is_liquid(step.bus[left].item):
+		if liquid:
 			if not right_ends:
 				# TODO. Needs a pump and no return line.
 				raise NotImplementedError("Compaction with overflow for fluids is not implemented")
@@ -311,20 +313,20 @@ def layout_compaction(step):
 		if right_ends:
 			continue
 		# overflow left back to right
-		layout.place(line_left, 6, primitives.belt(RIGHT, line_right - line_left))
+		layout.place(line_left, 6, pipe_or_belt(RIGHT, line_right - line_left))
 		# right bottom part
-		layout.place(bus_x(right), 6, primitives.belt_from_left)
+		layout.place(bus_x(right), 6, primitives.pipe_from_left if liquid else primitives.belt_from_left)
 
 	# shifts
 	for left, right in step.shifts:
 		# right part
-		layout.place(bus_x(right), -2, primitives.belt_to_left)
+		layout.place(bus_x(right), -2, primitives.pipe_to_left if liquid else primitives.belt_to_left)
 		# right to left line
 		line_right = bus_x(right) - 1
 		line_left = bus_x(left) + 1
-		layout.place(line_right, 0, primitives.belt(LEFT, line_right - line_left))
+		layout.place(line_right, 1, pipe_or_belt(LEFT, line_right - line_left))
 		# left down
-		layout.place(bus_x(left), 0, primitives.belt(DOWN, 7))
+		layout.place(bus_x(left), 0, pipe_or_belt(DOWN, 7))
 
 	return layout
 
