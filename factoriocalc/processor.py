@@ -160,27 +160,64 @@ class Processor(object):
 		return layout, self.head_width + bodies * self.body_width + self.tail_width
 
 
+# Useful sub-layouts for common patterns
+
+# A tail section that is empty except for poles to power beacons
+#  |
+#  | o
+#  |
+#  |
+#  |
+#  | o
+#  |
+pole_tail = Layout('pole tail',
+	(1, 1, primitives.medium_pole),
+	(1, 5, primitives.medium_pole),
+)
+
+
 # Processors
 
+# Simple processor for everything that uses furnaces, which are uniformly 1 belt -> 1 belt
+#   >>>|>>>>>>|
+#  ⊂^o |i oi  | o
+#      |┌─┐┌─┐|
+#      |│F││F│|
+#      |└─┘└─┘|
+#    o |i oi  | o
+#  ⊂<<<|<<<<<<|
 Processor('furnaces',
 	building='furnace',
 	inputs=(0, 1, 0),
 	outputs=(0, 1, 0),
-	# head TODO
-	head_width=6,
+	per_body_buildings=2,
+	# head: Connect y=1 into body at y=0 and y=6 out of body at y=6
+	head_width=4,
+	head=Layout('head',
+		(1, 0, primitives.belt(RIGHT, 3)),
+		(0, 1, primitives.belt_from_ground(RIGHT)),
+		(1, 1, primitives.entity(E.belt, UP)),
+		(2, 1, primitives.medium_pole),
+		(2, 5, primitives.medium_pole),
+		(0, 6, primitives.belt_into_ground(LEFT)),
+		(3, 6, primitives.belt(LEFT, 3)),
+	)
 	# body: couldn't be simpler. just a pair of assemblers with inserters and sharing
 	# power poles on each side
-	#  >>>>>>
-	#  i oi
-	#  ┌─┐┌─┐
-	#  │F││F│
-	#  └─┘└─┘
-	#  i oi
-	#  <<<<<<
 	body_width=6,
 	body=Layout('body',
 		(0, 0, primitives.belt(RIGHT, 6)),
 		(0, 1, entity(E.inserter, UP)),
-		# TODO UPTO
-	)
+		(2, 1, primitives.medium_pole),
+		(3, 1, entity(E.inserter, UP)),
+		(0, 2, entity(E.furnace)),
+		(3, 2, entity(E.furnace)),
+		(0, 5, entity(E.inserter, UP)),
+		(2, 5, primitives.medium_pole),
+		(3, 5, entity(E.inserter, UP)),
+		(5, 6, primitives.belt(LEFT, 6)),
+	),
+	# note tail goes a bit wider than the last thing put down, so that there's enough beacons
+	tail_width=3,
+	tail=pole_tail,
 )
