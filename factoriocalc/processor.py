@@ -69,8 +69,8 @@ class Processor(object):
 		"""
 		self.name = name
 		self.building = building
-		self.inputs = InOutKinds(*inputs),
-		self.outputs = InOutKinds(*outputs),
+		self.inputs = InOutKinds(*inputs)
+		self.outputs = InOutKinds(*outputs)
 		self.head = head
 		self.body = body
 		self.tail = tail
