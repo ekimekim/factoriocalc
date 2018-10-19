@@ -34,7 +34,11 @@ from .util import is_liquid, UP, RIGHT, DOWN, LEFT, Layout, line_limit
 # * Outputs are expected at given y slots
 # * The area will have beacons above and below, but not nessecarily extending past
 #   the edges, so care must be taken to have buildings fully covered, they must be off the edge a little.
-# * Power is provided from a medium electric poll offset from the top-left corner by (1-3, 2)
+# * Power is provided from a medium electric poll offset from the top-left corner by (1-3, 2),
+#   OR offset from the bottom-left corner by (1-3, -2).
+#   This is needed because if the bus shrinks this step, the next step's beacons may extend further left
+#   than your base x, so the lower pole won't be there. But if the bus expands this step, the opposite is true.
+#   Since the bus can't shrink AND expand simultaniously, at least one will be present.
 
 # Each line in the bus is seperated by a 1 unit gap.
 # In general each action involving a line in the bus area should keep to its own column
