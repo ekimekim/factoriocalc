@@ -3,7 +3,7 @@ import math
 
 from . import primitives
 from .beltmanager import Placement
-from .util import is_liquid, UP, RIGHT, DOWN, LEFT, Layout
+from .util import is_liquid, UP, RIGHT, DOWN, LEFT, Layout, line_limit
 
 
 # Notes:
@@ -281,7 +281,51 @@ def layout_in_outs(step, process_base_x):
 
 def layout_compaction(step):
 	"""Return the layout needed to perform the compactions and shifts."""
-	return Layout("compaction TODO") # TODO
+	layout = Layout("compaction TODO")
+	bus_x = lambda index: BUS_START_X + 2 * index
+
+	# This is fairly simple for now, and any additional capabilities need to be
+	# added both here and in belt manager.
+	# We assume a compaction or shift has full use of space y=(0, 7) between the two lines
+	# in question.
+
+	# compactions
+	for left, right in step.compactions:
+		right_ends = step.bus[left].throughput + step.bus[right].throughput <= line_limit(step.bus[left].item)
+		# right top part
+		layout.place(bus_x(right), -2, primitives.belt_to_left)
+		# right to left line
+		line_right = bus_x(right) - 1
+		line_left = bus_x(left) + 2
+		layout.place(line_right, 0, primitives.belt(LEFT, line_right - line_left))
+		# left part
+		if is_liquid(step.bus[left].item):
+			if not right_ends:
+				raise ValueError("Compacting pipes with overflow doesn't make sense")
+			primitive = primitives.compact_pipe
+		else:
+			primitive = primitives.compact_belts if right_ends else primitives.compact_belts_with_overflow
+		layout.place(bus_x(left), 0, primitive)
+		# if no overflow, we're done
+		if right_ends:
+			continue
+		# overflow left back to right
+		layout.place(line_left + 1, 6, primitives.belt(RIGHT, line_right - line_left - 1))
+		# right bottom part
+		layout.place(bus_x(right), 6, primitives.belt_from_left)
+
+	# shifts
+	for left, right in step.shifts:
+		# right part
+		layout.place(bus_x(right), -2, primitives.belt_to_left)
+		# right to left line
+		line_right = bus_x(right) - 1
+		line_left = bus_x(left) + 1
+		layout.place(line_right, 0, primitives.belt(LEFT, line_right - line_left))
+		# left down
+		layout.place(bus_x(left), 0, primitives.belt(DOWN, 7))
+
+	return layout
 
 
 def layout_process(step):

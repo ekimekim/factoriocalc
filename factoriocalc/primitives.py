@@ -219,6 +219,86 @@ def pipe_onramp_all(height):
 	)
 
 
+# Takes an incoming belt line from the bus and sends it to the left at y slot 0
+#  v
+#  v
+#  <
+belt_to_left = Layout('belt to left',
+	(0, 0, belt(DOWN, 2)),
+	(0, 2, entity(E.belt, LEFT)),
+)
+
+
+# As belt_to_left but for pipes
+#  =
+#  =
+#  =
+pipe_to_left = pipe(DOWN, 3)
+
+
+# Takes a belt from the left at bottom y slot and sends it down
+#  v
+#  v
+belt_from_left = belt(DOWN, 2)
+
+
+# As belt_from_left but for pipes
+#  =
+#  =
+pipe_from_left = pipe(DOWN, 2)
+
+
+# Join two belts, with the right incoming on y_slot 0.
+# Note the balancing of sides in order to ensure full throughput is gained.
+# Note we always assume a belt's available throughput is greater on the right side
+# ie. we always consume left-first.
+#  v
+#  v
+#  vv  <- right in
+#  Ss
+#  v<
+#  v
+#  v
+#  v
+#  v
+#  v
+compact_belts = Layout('compact belts',
+	(0, -2, belt(DOWN, 3)),
+	(1, 0, entity(E.belt, DOWN)),
+	(0, 1, entity(E.splitter, DOWN, input_priority='right', output_priority='right')),
+	(0, 2, belt(DOWN, 6)),
+	(1, 2, entity(E.belt, LEFT)),
+)
+
+
+# As belt_compact, but assume left output can't take everything and overflow
+# to a right output on y_slot 6.
+# The same notes about balancing apply.
+#  v
+#  v
+#  vv  <- right in
+#  vv
+#  vv
+#  vv
+#  Ss
+#  vSs
+#  v<> -> right out
+#  v
+compact_belts_with_overflow = Layout('compact belts with overflow',
+	(0, -2, belt(DOWN, 6)),
+	(1, 0, belt(DOWN, 4)),
+	(0, 4, entity(E.splitter, DOWN, input_priority='right', output_priority='right')),
+	(0, 5, belt(DOWN, 3)),
+	(1, 5, entity(E.splitter, DOWN, output_priority='right')),
+	(1, 6, entity(E.belt, LEFT)),
+	(2, 6, entity(E.belt, RIGHT)),
+)
+
+
+# Join two pipes, with the right incoming on y_slot 0
+compact_pipe = pipe_ramp(0)
+
+
 # Single-entity primitives, used directly for simple or fiddly bits in layouter
 medium_pole = entity(E.medium_pole)
 big_pole = entity(E.big_pole)
