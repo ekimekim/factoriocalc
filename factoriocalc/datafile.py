@@ -148,7 +148,7 @@ class Datafile(object):
 		for item in items.values():
 			if item.building not in buildings:
 				raise ValueError("Error in {!r}: {!r} is built in {!r}, but no such building declared".format(filepath, item.name, item.building))
-			items[item.name] = item._replace(building=buildings[building])
+			items[item.name] = item._replace(building=buildings[item.building])
 
 		return items, buildings, modules
 
