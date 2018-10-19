@@ -351,6 +351,7 @@ def layout_process(step):
 				halfbelts += 1
 			else:
 				belts += 1
+		return liquids, belts, halfbelts
 	try:
 		processor = Processor.find_processor(
 			step.process.recipe.building,

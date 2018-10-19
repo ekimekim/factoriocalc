@@ -43,6 +43,7 @@ class _Entities(object):
 	assembler = 'assembly-machine-3'
 	splitter = 'express belt splitter'
 	roboport = 'roboport'
+	furnace = 'electric-furnace'
 
 	# checked
 	speed_module = 'speed-module-3'

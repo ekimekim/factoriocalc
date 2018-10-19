@@ -1,3 +1,4 @@
+# -encoding: utf-8-
 
 import math
 from collections import namedtuple
@@ -68,8 +69,8 @@ class Processor(object):
 		"""
 		self.name = name
 		self.building = building
-		self.inputs = InOutKinds(inputs),
-		self.outputs = InOutKinds(outputs),
+		self.inputs = InOutKinds(*inputs),
+		self.outputs = InOutKinds(*outputs),
 		self.head = head
 		self.body = body
 		self.tail = tail
@@ -108,14 +109,17 @@ class Processor(object):
 	def find_processor(cls, building, inputs, outputs):
 		"""Inputs and outputs should be tuples (liquid, full belt, half belt).
 		Returns processor or raises."""
-		inputs = InOutKinds(inputs)
-		outputs = InOutKinds(outputs)
+		inputs = InOutKinds(*inputs)
+		outputs = InOutKinds(*outputs)
 		candidates = [processor for processor in cls.PROCESSORS if processor]
 		if not candidates:
 			raise ValueError("Could not find processor for {} with {} inputs and {} outputs".format(
 				building, inputs, outputs
 			))
-		return min(candidates, key=lambda processor: processor.match_score())
+		return min(
+			candidates,
+			key=lambda processor: processor.match_score(building, inputs, outputs),
+		)
 
 	def determine_bodies(self, step):
 		"""Work out how many body sections are needed for the given step."""
@@ -131,14 +135,14 @@ class Processor(object):
 		# multi-output things only output liquids.
 		# XXX Future work: allow a processor to advertise "double inserter" lines
 		# that would let buildings run at full speed as long as only one item is the issue.
-		max_item_rate = max(
+		item_rates = [
 			throughput_per_building * per_output
-			for item, per_output in (recipe.inputs.items() + (recipe.name, 1)) # extra term stands for output
-			if is_liquid(item)
-		)
-		if max_item_rate > self.MAX_INSERT_RATE:
+			for item, per_output in (recipe.inputs.items() + [(recipe.name, 1)]) # extra term stands for output
+			if not is_liquid(item)
+		]
+		if item_rates and max(item_rates) > self.MAX_INSERT_RATE:
 			# slow down the building to match the speed of insertion of the highest volume item
-			throughput_per_building *= self.MAX_INSERT_RATE / max_item_rate
+			throughput_per_building *= self.MAX_INSERT_RATE / max(item_rates)
 		buildings = throughput / throughput_per_building
 		buildings -= self.base_buildings
 		return max(0, int(math.ceil(buildings / self.per_body_buildings)))
@@ -153,7 +157,7 @@ class Processor(object):
 		layout = Layout("process: {}".format(self.name))
 		layout.place(0, 0, self.resolve_layout(step, self.head))
 		body = self.resolve_layout(step, self.body)
-		bodies = self.determine_bodies()
+		bodies = self.determine_bodies(step)
 		for i in range(bodies):
 			layout.place(self.head_width + i * self.body_width, 0, body)
 		layout.place(
@@ -203,7 +207,7 @@ Processor('furnaces',
 		(1, 1, primitives.entity(E.belt, UP)),
 		(2, 1, primitives.medium_pole),
 		(2, 5, primitives.medium_pole),
-		(0, 6, primitives.belt_into_ground(LEFT)),
+		(0, 6, primitives.belt_to_ground(LEFT)),
 		(3, 6, primitives.belt(LEFT, 3)),
 	),
 	# body: couldn't be simpler. just a pair of assemblers with inserters and sharing
