@@ -137,11 +137,11 @@ class BeltManager(object):
 			if source is None:
 				position -= 1
 				continue
+			# find candidates: lines to our left with the same item that aren't full
 			candidates = [
-				(i, line) for i, line in enumerate(self.bus)
+				(i, line) for i, line in enumerate(self.bus[:position])
 				if (
-					i != position
-					and line is not None
+					line is not None
 					and line.item == source.item
 					and line.throughput < line_limit(line.item)
 				)
