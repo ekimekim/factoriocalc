@@ -3,6 +3,7 @@ import math
 
 from . import primitives
 from .beltmanager import Placement
+from .processor import Processor
 from .util import is_liquid, UP, RIGHT, DOWN, LEFT, Layout, line_limit
 
 
@@ -341,7 +342,25 @@ def layout_process(step):
 	* layout
 	* the end point of the process in the x axis, ie. the width.
 	"""
-	return Layout("process TODO"), 9 # TODO
+	def classify_items(in_or_out):
+		liquids, belts, halfbelts = 0, 0, 0
+		for item, throughput in in_or_out.items():
+			if is_liquid(item):
+				liquids += 1
+			elif throughput <= line_limit(item) / 2:
+				halfbelts += 1
+			else:
+				belts += 1
+	try:
+		processor = Processor.find_processor(
+			step.process.recipe.building,
+			classify_items(step.process.inputs()),
+			classify_items(step.process.outputs()),
+		)
+	except ValueError:
+		# TODO For now, silently ignore missing processor and provide dummy values
+		return Layout("dummy processor"), 9
+	return processor.layout(step)
 
 
 def layout_roboport_row(bus, width):

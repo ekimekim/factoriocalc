@@ -2,7 +2,9 @@
 import math
 from collections import namedtuple
 
-from .util import Layout
+from . import primitives
+from .primitives import E, entity
+from .util import Layout, is_liquid, UP, RIGHT, DOWN, LEFT
 
 
 EMPTY = Layout("empty")
@@ -125,6 +127,8 @@ class Processor(object):
 		# This is to account for the limit of throughput of a single stack inserter,
 		# and is generally only an issue for things that can't be prod-modded
 		# (so you tend to end up with 4x speed 3s + beacons for a crazy total speed)
+		# NOTE: This does not consider multiple outputs. This is fine for now since the only
+		# multi-output things only output liquids.
 		# XXX Future work: allow a processor to advertise "double inserter" lines
 		# that would let buildings run at full speed as long as only one item is the issue.
 		max_item_rate = max(
@@ -201,7 +205,7 @@ Processor('furnaces',
 		(2, 5, primitives.medium_pole),
 		(0, 6, primitives.belt_into_ground(LEFT)),
 		(3, 6, primitives.belt(LEFT, 3)),
-	)
+	),
 	# body: couldn't be simpler. just a pair of assemblers with inserters and sharing
 	# power poles on each side
 	body_width=6,
