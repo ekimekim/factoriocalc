@@ -118,7 +118,7 @@ def pipe_surface(orientation):
 	delta = orientation_to_vector(orientation)
 	return Layout('pipe surface',
 		(0, 0, entity(E.underground_pipe, orientation)),
-		(delta.x, delta.y, entity(E.underground_pipe, orientation)),
+		(delta.x, delta.y, entity(E.underground_pipe, (orientation + 2) % 4)),
 	)
 
 
@@ -263,11 +263,11 @@ pipe_from_left = pipe(DOWN, 2)
 #  v
 #  v
 compact_belts = Layout('compact belts',
-	(0, -2, belt(DOWN, 3)),
-	(1, 0, entity(E.belt, DOWN)),
-	(0, 1, entity(E.splitter, DOWN, input_priority='right', output_priority='right')),
-	(0, 2, belt(DOWN, 6)),
-	(1, 2, entity(E.belt, LEFT)),
+	(0, 0, belt(DOWN, 3)),
+	(1, 2, entity(E.belt, DOWN)),
+	(0, 3, entity(E.splitter, DOWN, input_priority='right', output_priority='right')),
+	(0, 4, belt(DOWN, 6)),
+	(1, 4, entity(E.belt, LEFT)),
 )
 
 
@@ -282,16 +282,15 @@ compact_belts = Layout('compact belts',
 #  vv
 #  Ss
 #  vSs
-#  v<> -> right out
+#  v<X -> outputs into X
 #  v
 compact_belts_with_overflow = Layout('compact belts with overflow',
-	(0, -2, belt(DOWN, 6)),
-	(1, 0, belt(DOWN, 4)),
-	(0, 4, entity(E.splitter, DOWN, input_priority='right', output_priority='right')),
-	(0, 5, belt(DOWN, 3)),
-	(1, 5, entity(E.splitter, DOWN, output_priority='right')),
-	(1, 6, entity(E.belt, LEFT)),
-	(2, 6, entity(E.belt, RIGHT)),
+	(0, 0, belt(DOWN, 6)),
+	(1, 2, belt(DOWN, 4)),
+	(0, 6, entity(E.splitter, DOWN, input_priority='right', output_priority='right')),
+	(0, 7, belt(DOWN, 3)),
+	(1, 7, entity(E.splitter, DOWN, output_priority='right')),
+	(1, 8, entity(E.belt, LEFT)),
 )
 
 

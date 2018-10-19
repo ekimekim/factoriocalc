@@ -305,12 +305,12 @@ def layout_compaction(step):
 			primitive = primitives.compact_pipe
 		else:
 			primitive = primitives.compact_belts if right_ends else primitives.compact_belts_with_overflow
-		layout.place(bus_x(left), 0, primitive)
+		layout.place(bus_x(left), -2, primitive)
 		# if no overflow, we're done
 		if right_ends:
 			continue
 		# overflow left back to right
-		layout.place(line_left + 1, 6, primitives.belt(RIGHT, line_right - line_left - 1))
+		layout.place(line_left, 6, primitives.belt(RIGHT, line_right - line_left))
 		# right bottom part
 		layout.place(bus_x(right), 6, primitives.belt_from_left)
 
