@@ -297,7 +297,20 @@ compact_belts_with_overflow = Layout('compact belts with overflow',
 
 
 # Join two pipes, with the right incoming on y_slot 1
-compact_pipe = pipe_ramp(1)
+#  =
+#  =
+#  =
+#  ==  <- right in
+#  =
+#  =
+#  =
+#  =
+#  =
+#  =
+compact_pipe = Layout('compact pipe',
+	(0, 0, pipe(DOWN, 10)),
+	(1, 3, entity(E.pipe)),
+)
 
 
 # Single-entity primitives, used directly for simple or fiddly bits in layouter
