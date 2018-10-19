@@ -60,8 +60,8 @@ belt_from_ground = lambda o: entity(E.underground_belt, o, type='output')
 # A bus pipe with pump, plus underground pipe going under the working area
 underpass_pipe = Layout('underpass pipe',
 	(0, 0, entity(E.pump, DOWN)),
-	(0, 2, entity(E.underground_pipe, DOWN)),
-	(0, 9, entity(E.underground_pipe, UP)),
+	(0, 2, entity(E.underground_pipe, UP)),
+	(0, 9, entity(E.underground_pipe, DOWN)),
 )
 
 # A bus underground belt going under the working area
@@ -73,8 +73,8 @@ underpass_belt = Layout('underpass belt',
 
 # A bus underground pipe for going under a roboport row
 roboport_underpass_pipe = Layout('roboport underpass pipe',
-	(0, 0, entity(E.underground_pipe, DOWN)),
-	(0, 6, entity(E.underground_pipe, UP)),
+	(0, 0, entity(E.underground_pipe, UP)),
+	(0, 6, entity(E.underground_pipe, DOWN)),
 )
 
 
