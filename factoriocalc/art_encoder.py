@@ -81,7 +81,7 @@ class ArtEncoder(object):
 			0: [['P'], ['p']],
 			1: [['p', 'P']],
 			2: [['p'], ['P']],
-			1: [['P', 'p']],
+			3: [['P', 'p']],
 		}[obj.orientation]),
 	}
 
