@@ -299,7 +299,7 @@ def layout_compaction(step):
 		# right to left line
 		line_right = bus_x(right) - 1
 		line_left = bus_x(left) + 2
-		layout.place(line_right, 1, pipe_or_belt(LEFT, line_right - line_left))
+		layout.place(line_right, 1, pipe_or_belt(LEFT, line_right - line_left + 1))
 		# left part
 		if liquid:
 			if not right_ends:
@@ -313,7 +313,7 @@ def layout_compaction(step):
 		if right_ends:
 			continue
 		# overflow left back to right
-		layout.place(line_left, 6, pipe_or_belt(RIGHT, line_right - line_left))
+		layout.place(line_left, 6, pipe_or_belt(RIGHT, line_right - line_left + 1))
 		# right bottom part
 		layout.place(bus_x(right), 6, primitives.pipe_from_left if liquid else primitives.belt_from_left)
 
@@ -324,7 +324,7 @@ def layout_compaction(step):
 		# right to left line
 		line_right = bus_x(right) - 1
 		line_left = bus_x(left) + 1
-		layout.place(line_right, 1, pipe_or_belt(LEFT, line_right - line_left))
+		layout.place(line_right, 1, pipe_or_belt(LEFT, line_right - line_left + 1))
 		# left down
 		layout.place(bus_x(left), 0, pipe_or_belt(DOWN, 7))
 
