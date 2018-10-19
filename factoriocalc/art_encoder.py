@@ -44,6 +44,7 @@ class ArtEncoder(object):
 	ART = {
 		E.inserter: green([['i']]),
 		E.assembler: yellow(boxed("A")),
+		E.furnace: blue(boxed("F")),
 		E.belt: lambda obj: blue([[
 			{
 				0: '^',
