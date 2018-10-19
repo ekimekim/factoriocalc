@@ -35,6 +35,19 @@ cyan = functools.partial(forecolor, color=6)
 white = functools.partial(forecolor, color=7)
 bold = functools.partial(forecolor, bold=True)
 
+def splitter(obj):
+	s = {
+		'left': 'Ss',
+		'right': 'sS',
+	}.get(obj.attrs['output_priority'], 'ss')
+	if obj.orientation % 2 == 0:
+		s = [list(s)]
+	else:
+		s = [[c] for c in s]
+	if obj.orientation / 2 > 0:
+		s = s[::-1]
+	return blue(s)
+
 class ArtEncoder(object):
 	"""Encodes a blueprint in a (lossy!) graphical representation in "ascii art"
 	(though not guarenteed to be 100% ascii). The intent is to aid in debugging
@@ -61,10 +74,7 @@ class ArtEncoder(object):
 				3: '⊃',
 			}[(obj.orientation + (2 if obj.attrs['type'] == 'input' else 0)) % 4]
 		]]),
-		E.splitter: lambda obj: blue({
-			0: [['S', 'S']],
-			1: [['S'], ['S']],
-		}[obj.orientation % 2]),
+		E.splitter: splitter,
 		E.medium_pole: [['o']],
 		E.big_pole: [['\\', '/'], ['/', '\\']],
 		E.beacon: boxed('B'),
