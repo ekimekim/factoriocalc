@@ -126,7 +126,7 @@ def layout_step(step):
 	Returns:
 		layout
 		x position to start beacons at
-		how long beacon rows above and below must extend
+		how long beacon rows above and below must extend (0 if beacons not needed)
 	"""
 	layout = Layout(str(step))
 	bus_width = step.width * 2
@@ -138,9 +138,9 @@ def layout_step(step):
 	if isinstance(step, Placement):
 		process_layout, process_width = layout_process(step)
 		layout.place(process_base_x, 0, process_layout)
+		process_end = process_width + process_base_x
 	else:
-		process_width = 0
-	process_end = process_width + process_base_x
+		process_end = 0
 
 	return layout, process_base_x, process_end
 
@@ -290,7 +290,7 @@ def layout_process(step):
 	* layout
 	* the end point of the process in the x axis, ie. the width.
 	"""
-	return Layout("process TODO"), 0 # TODO
+	return Layout("process TODO"), 9 # TODO
 
 
 def layout_roboport_row(bus, width):
