@@ -354,7 +354,7 @@ def layout_process(step):
 		return liquids, belts, halfbelts
 	try:
 		processor = Processor.find_processor(
-			step.process.recipe.building,
+			step.process.recipe.building.name,
 			classify_items(step.process.inputs()),
 			classify_items(step.process.outputs()),
 		)

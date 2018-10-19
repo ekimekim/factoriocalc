@@ -111,7 +111,7 @@ class Processor(object):
 		Returns processor or raises."""
 		inputs = InOutKinds(*inputs)
 		outputs = InOutKinds(*outputs)
-		candidates = [processor for processor in cls.PROCESSORS if processor]
+		candidates = [processor for processor in cls.PROCESSORS if processor.match_score(building, inputs, outputs)]
 		if not candidates:
 			raise ValueError("Could not find processor for {} with {} inputs and {} outputs".format(
 				building, inputs, outputs
