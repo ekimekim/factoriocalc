@@ -65,10 +65,13 @@ class Processor(object):
 		base_buildings=0, per_body_buildings=0,
 	):
 		"""Most args are self-evident, see main docstring.
-		head, body and tail may be callable, in which case they take the recipe as arg.
+		head, body and tail may be callable, in which case they take, as an arg,
+		a primitive representing the production building of the recipe.
+		Building may be an iterable listing all supported buildings (this only makes
+		sense when using the callable-body feature).
 		"""
 		self.name = name
-		self.building = building
+		self.buildings = [building] if isinstance(building, basestring) else building
 		self.inputs = InOutKinds(*inputs)
 		self.outputs = InOutKinds(*outputs)
 		self.head = head
@@ -84,7 +87,7 @@ class Processor(object):
 	def match_score(self, building, inputs, outputs):
 		"""Returns a sortable score, the lower the better, or None if no match."""
 		# No match if the building is wrong
-		if self.building != building:
+		if building not in self.buildings:
 			return
 		# unused counts completely unused inputs/outputs,
 		# underused counts full belt slots being used for half-belt in/outs.
@@ -147,23 +150,36 @@ class Processor(object):
 		buildings -= self.base_buildings
 		return max(0, int(math.ceil(buildings / self.per_body_buildings)))
 
-	def resolve_layout(self, step, layout):
+	def resolve_layout(self, building, layout):
 		if callable(layout):
-			return layout(step.process.recipe)
+			return layout(building)
 		return layout
+
+	def get_building_primitive(self, recipe):
+		"""For given recipe, return primitive with a correctly configured building,
+		including modules, etc.
+		"""
+		attrs = {}
+		# furnaces are a special case that don't need a recipe set
+		if recipe.building != 'furnace':
+			attrs['recipe'] = E[recipe.name]
+		if recipe.mods:
+			attrs['items'] = [E[mod] for mod in recipe.mods]
+		return entity(E[recipe.building.name], **attrs)
 
 	def layout(self, step):
 		"""Returns (layout, width) for the given step, which must already be matching."""
+		building = self.get_building_primitive(step.process.recipe)
 		layout = Layout("process: {}".format(self.name))
-		layout.place(0, 0, self.resolve_layout(step, self.head))
-		body = self.resolve_layout(step, self.body)
+		layout.place(0, 0, self.resolve_layout(building, self.head))
+		body = self.resolve_layout(building, self.body)
 		bodies = self.determine_bodies(step)
 		for i in range(bodies):
 			layout.place(self.head_width + i * self.body_width, 0, body)
 		layout.place(
 			self.head_width + bodies * self.body_width,
 			0,
-			self.resolve_layout(step, self.tail)
+			self.resolve_layout(building, self.tail)
 		)
 		return layout, self.head_width + bodies * self.body_width + self.tail_width
 
@@ -186,7 +202,8 @@ pole_tail = Layout('pole tail',
 
 # Processors
 
-# Simple processor for everything that uses furnaces, which are uniformly 1 belt -> 1 belt
+# Simple processor for basic 1 -> 1 belt recipes, eg. all smelting, iron gears.
+# Can support any of the 3x3 building types (furnaces, assemblers, chemical plants).
 #   >>>|>>>>>>|
 #  ⊂^o |i oi  | o
 #      |┌─┐┌─┐|
@@ -194,8 +211,8 @@ pole_tail = Layout('pole tail',
 #      |└─┘└─┘|
 #    o |i oi  | o
 #  ⊂<<<|<<<<<<|
-Processor('furnaces',
-	building='furnace',
+Processor('1 -> 1',
+	building=('furnace','assembler','chemical plant'),
 	inputs=(0, 1, 0),
 	outputs=(0, 1, 0),
 	per_body_buildings=2,
@@ -213,13 +230,13 @@ Processor('furnaces',
 	# body: couldn't be simpler. just a pair of assemblers with inserters and sharing
 	# power poles on each side
 	body_width=6,
-	body=Layout('body',
+	body=lambda building: Layout('body',
 		(0, 0, primitives.belt(RIGHT, 6)),
 		(0, 1, entity(E.inserter, UP)),
 		(2, 1, primitives.medium_pole),
 		(3, 1, entity(E.inserter, UP)),
-		(0, 2, entity(E.furnace, items={E.prod_module: 2})),
-		(3, 2, entity(E.furnace, items={E.prod_module: 2})),
+		(0, 2, building),
+		(3, 2, building),
 		(0, 5, entity(E.inserter, UP)),
 		(2, 5, primitives.medium_pole),
 		(3, 5, entity(E.inserter, UP)),
