@@ -6,6 +6,7 @@ from .calculator import Calculator, split_into_steps
 from .beltmanager import BeltManager, Placement, Compaction
 from .layouter import layout
 from .art_encoder import ArtEncoder
+from . import blueprint
 
 
 def format_bus(bus):
@@ -87,3 +88,5 @@ def main(items, data_path='./factorio_recipes', stop_items='', show_conflicts=Fa
 
 	v("=== Encoder stage ===")
 	print ArtEncoder(error_on_conflict = not show_conflicts).encode(entities)
+	print
+	print blueprint.encode(entities)
