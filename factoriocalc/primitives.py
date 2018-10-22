@@ -31,22 +31,23 @@ def entity(name, orientation=None, **attrs):
 # A mapping from easy internal names to official names
 class _Entities(object):
 	# guessed
-	underground_pipe = 'underground pipe'
+
+	# checked
+	underground_pipe = 'pipe-to-ground'
 	pipe = 'pipe'
 	pump = 'pump'
-	belt = 'express belt'
-	underground_belt = 'express underground belt'
+	belt = 'express-transport-belt'
+	underground_belt = 'express-underground-belt'
 	medium_pole = 'medium-electric-pole'
 	big_pole = 'big-electric-pole'
 	beacon = 'beacon'
 	inserter = 'stack-inserter'
-	assembler = 'assembly-machine-3'
-	splitter = 'express belt splitter'
+	assembler = 'assembling-machine-3'
+	splitter = 'express-splitter'
 	roboport = 'roboport'
 	furnace = 'electric-furnace'
-
-	# checked
 	speed_module = 'speed-module-3'
+	prod_module = 'productivity-module-3'
 
 E = _Entities()
 
