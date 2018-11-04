@@ -5,7 +5,7 @@ import json
 
 def main(input=None):
 	if input is None:
-		input = sys.stead.read()
+		input = sys.stdin.read()
 	version, input = input[0], input[1:]
 	assert version == '0', "Unknown version: {}".format(version)
 	input = input.decode('base64')
