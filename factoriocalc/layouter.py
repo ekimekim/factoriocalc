@@ -286,7 +286,7 @@ def layout_in_outs(step, process_base_x):
 
 def layout_compaction(step):
 	"""Return the layout needed to perform the compactions and shifts."""
-	layout = Layout("compaction TODO")
+	layout = Layout("compaction")
 	bus_x = lambda index: BUS_START_X + 2 * index
 
 	# This is fairly simple for now, and any additional capabilities need to be
@@ -322,8 +322,8 @@ def layout_compaction(step):
 		# right bottom part
 		layout.place(bus_x(right), 6, primitives.pipe_from_left if liquid else primitives.belt_from_left)
 
-	# shifts
-	for left, right in step.shifts:
+	# shifts. note we assume source is to the right of dest
+	for right, left in step.shifts:
 		# right part
 		layout.place(bus_x(right), -2, primitives.pipe_to_left if liquid else primitives.belt_to_left)
 		# right to left line
@@ -331,7 +331,7 @@ def layout_compaction(step):
 		line_left = bus_x(left) + 1
 		layout.place(line_right, 1, pipe_or_belt(LEFT, line_right - line_left + 1))
 		# left down
-		layout.place(bus_x(left), 0, pipe_or_belt(DOWN, 7))
+		layout.place(bus_x(left), 1, pipe_or_belt(DOWN, 7))
 
 	return layout
 
