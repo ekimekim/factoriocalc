@@ -54,7 +54,7 @@ class Processor(object):
 	and must pad out enough width that all buildings are maximally covered by beacons.
 	"""
 	PROCESSORS = []
-	MAX_INSERT_RATE = 12 # worst case items/sec of stack inserter, TODO confirm value
+	MAX_INSERT_RATE = 12 # worst case items/sec of stack inserter
 
 	def __init__(self, name,
 		building='assembler',
@@ -211,8 +211,8 @@ pole_tail = Layout('pole tail',
 #      |┌─┐┌─┐|
 #      |│F││F│|
 #      |└─┘└─┘|
-#    o |i oivS| o
-#  ⊂<<<|<<<<<s|
+#    o |vSioi | o
+#  ⊂<<<|<s<<<<|
 Processor('1 -> 1',
 	building=('furnace','assembler','chemical plant'),
 	inputs=(0, 1, 0),
@@ -239,12 +239,13 @@ Processor('1 -> 1',
 		(3, 1, entity(E.inserter, UP)),
 		(0, 2, building),
 		(3, 2, building),
-		(0, 5, entity(E.inserter, UP)),
-		(2, 5, primitives.medium_pole),
-		(3, 5, entity(E.inserter, UP)),
-		(4, 5, entity(E.belt, DOWN)),
-		(5, 5, entity(E.splitter, LEFT, output_priority='right')),
-		(4, 6, primitives.belt(LEFT, 5)),
+		(0, 5, entity(E.belt, DOWN)),
+		(1, 5, entity(E.splitter, LEFT, output_priority='right')),
+		(2, 5, entity(E.inserter, UP)),
+		(3, 5, primitives.medium_pole),
+		(4, 5, entity(E.inserter, UP)),
+		(0, 6, entity(E.belt, LEFT)),
+		(5, 6, primitives.belt(LEFT, 4)),
 	),
 	# note tail goes a bit wider than the last thing put down, so that there's enough beacons
 	tail_width=3,

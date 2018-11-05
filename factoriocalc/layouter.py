@@ -192,7 +192,7 @@ def layout_bus(step, process_base_x):
 
 def layout_beacons(width):
 	layout = Layout("beacons")
-	for x in range(int(math.ceil(width / 3))):
+	for x in range(int(math.ceil(width / 3.))):
 		layout.place(3*x, 0, primitives.beacon)
 	return layout
 
