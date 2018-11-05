@@ -43,7 +43,7 @@ def encode(entities, label="Generated", icons=[E.assembler]):
 		pos.y + entity_sizes.get(entity.name, (1, 1))[1]
 		for pos, entity in entities
 	])
-	center = Point(width / 2., height / 2.)
+	center = Point(width / 2 + .5, height / 2 + .5)
 	blueprint = {
 		"blueprint": {
 			"item": "blueprint",
