@@ -5,7 +5,7 @@ import json
 import zlib
 
 from .primitives import E
-from .util import UP, RIGHT, DOWN, LEFT
+from .util import UP, RIGHT, DOWN, LEFT, Point
 
 
 FORMAT_VERSION = '0'
@@ -32,6 +32,18 @@ def encode(entities, label="Generated", icons=[E.assembler]):
 	"""Encode a list of (pos, entity) into a blueprint string.
 	Optional args are to set blueprint label and icons.
 	"""
+	# Non-centered blueprints seem to cause weird issues.
+	# We work out the full width and height, then pick a center point
+	# and re-cast everything to that.
+	width = max([
+		pos.x + entity_sizes.get(entity.name, (1, 1))[0]
+		for pos, entity in entities
+	])
+	height = max([
+		pos.y + entity_sizes.get(entity.name, (1, 1))[1]
+		for pos, entity in entities
+	])
+	center = Point(width / 2., height / 2.)
 	blueprint = {
 		"blueprint": {
 			"item": "blueprint",
@@ -47,7 +59,7 @@ def encode(entities, label="Generated", icons=[E.assembler]):
 				} for i, item in enumerate(icons)
 			],
 			"entities": [
-				encode_entity(i + 1, pos, entity)
+				encode_entity(i + 1, pos, entity, center)
 				for i, (pos, entity) in enumerate(entities)
 			],
 		}
@@ -59,7 +71,7 @@ def encode_json(data):
 	return FORMAT_VERSION + base64.b64encode(zlib.compress(json.dumps(data)))
 
 
-def encode_entity(number, pos, entity):
+def encode_entity(number, pos, entity, center):
 	width, height = entity_sizes.get(entity.name, (1, 1))
 	if entity.orientation is not None and entity.orientation % 2 == 1:
 		# Rotate entities if left or right
@@ -68,8 +80,8 @@ def encode_entity(number, pos, entity):
 		"entity_number": number,
 		"name": entity.name,
 		"position": {
-			"x": pos.x + width / 2.,
-			"y": pos.y + height / 2.,
+			"x": pos.x + width / 2. - center.x,
+			"y": pos.y + height / 2. - center.y,
 		},
 	}
 	if entity.orientation is not None and entity.orientation != UP:
