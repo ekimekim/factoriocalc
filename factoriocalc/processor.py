@@ -211,8 +211,8 @@ pole_tail = Layout('pole tail',
 #      |┌─┐┌─┐|
 #      |│F││F│|
 #      |└─┘└─┘|
-#    o |i oi  | o
-#  ⊂<<<|<<<<<<|
+#    o |i oivS| o
+#  ⊂<<<|<<<<<s|
 Processor('1 -> 1',
 	building=('furnace','assembler','chemical plant'),
 	inputs=(0, 1, 0),
@@ -242,7 +242,9 @@ Processor('1 -> 1',
 		(0, 5, entity(E.inserter, UP)),
 		(2, 5, primitives.medium_pole),
 		(3, 5, entity(E.inserter, UP)),
-		(5, 6, primitives.belt(LEFT, 6)),
+		(4, 5, entity(E.belt, DOWN)),
+		(5, 5, entity(E.splitter, LEFT, output_priority='right')),
+		(4, 6, primitives.belt(LEFT, 5)),
 	),
 	# note tail goes a bit wider than the last thing put down, so that there's enough beacons
 	tail_width=3,
