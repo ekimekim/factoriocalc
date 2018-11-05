@@ -1,7 +1,7 @@
 # -encoding: utf-8-
 
 import math
-from collections import namedtuple
+from collections import namedtuple, Counter
 
 from . import primitives
 from .primitives import E, entity
@@ -161,10 +161,12 @@ class Processor(object):
 		"""
 		attrs = {}
 		# furnaces are a special case that don't need a recipe set
-		if recipe.building != 'furnace':
+		if recipe.building.name != 'furnace':
 			attrs['recipe'] = E[recipe.name]
 		if recipe.mods:
-			attrs['items'] = [E[mod] for mod in recipe.mods]
+			attrs['items'] = {
+				E[mod]: count for mod, count in Counter(recipe.mods).items()
+			}
 		return entity(E[recipe.building.name], **attrs)
 
 	def layout(self, step):

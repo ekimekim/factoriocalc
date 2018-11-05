@@ -5,6 +5,7 @@ import json
 import zlib
 
 from .primitives import E
+from .util import UP, RIGHT, DOWN, LEFT
 
 
 FORMAT_VERSION = '0'
@@ -13,10 +14,17 @@ MAP_VERSION = 0x1000330000
 
 # Size of non-1x1 entities. Needed as blueprints specify location by center point.
 # Each entry is (width, height), as per their layout with orientation up/down.
+x2 = (2, 2)
+x3 = (3, 3)
+x4 = (4, 4)
 entity_sizes = {
 	E.pump: (1, 2),
-	E.assembler: (3, 3),
-	E.furnace: (3, 3),
+	E.big_pole: x2,
+	E.beacon: x3,
+	E.assembler: x3,
+	E.splitter: (2, 1),
+	E.roboport: x4,
+	E.furnace: x3,
 }
 
 
@@ -44,7 +52,11 @@ def encode(entities, label="Generated", icons=[E.assembler]):
 			],
 		}
 	}
-	return FORMAT_VERSION + base64.b64encode(zlib.compress(json.dumps(blueprint)))
+	return encode_json(blueprint)
+
+
+def encode_json(data):
+	return FORMAT_VERSION + base64.b64encode(zlib.compress(json.dumps(data)))
 
 
 def encode_entity(number, pos, entity):
@@ -60,8 +72,17 @@ def encode_entity(number, pos, entity):
 			"y": pos.y + height / 2.,
 		},
 	}
-	if entity.orientation is not None:
-		# TODO i don't think my orientations map correctly to theirs
-		ret["direction"] = entity.orientation
+	if entity.orientation is not None and entity.orientation != UP:
+		# In their blueprints, up-oriented things have direction omitted.
+		# I suspect this would work either way but shorter blueprints is always nice.
+		# Their orientations map the same as ours but doubled, ie. 0, 2, 4, 6.
+		# Bottom bit is ignored.
+		ret["direction"] = 2 * entity.orientation
 	ret.update(entity.attrs)
 	return ret
+
+
+if __name__ == '__main__':
+	# For testing of arbitrary blueprints
+	import sys
+	print encode_json(json.load(sys.stdin))

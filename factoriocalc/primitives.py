@@ -48,10 +48,10 @@ class _Entities(object):
 	furnace = 'electric-furnace'
 	speed_module = 'speed-module-3'
 	prod_module = 'productivity-module-3'
+	prod_3 = prod_module
 
 	def __getitem__(self, key):
-		key = key.replace(' ', '-')
-		return getattr(self, key, key)
+		return getattr(self, key.replace(' ', '_'), key.replace(' ', '-'))
 
 E = _Entities()
 
