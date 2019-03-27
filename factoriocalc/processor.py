@@ -307,3 +307,76 @@ Processor('2 half-belt in',
 	tail_width=3,
 	tail=pole_tail,
 )
+
+
+# Processor for 2 full -> 1 half belt recipes.
+# Suitable when there is signifigantly less output than input, which is quite common
+# (though thanks to productivity, not as common as you'd think).
+# Can support any of the 3x3 building types (furnaces, assemblers, chemical plants).
+#   >⊃>|>v⊂⊃>>|
+#  ⊂^o^|i∪ii∪o| o
+#  ⊂>>^|┌─┐┌─┐|
+#      |│F││F│|
+#      |└─┘└─┘|
+#   ovS|i∩oi∩i| o
+#  ⊂<<s|⊃>>>^⊂|
+Processor('2 -> 1 half',
+	building=('furnace','assembler','chemical plant'),
+	inputs=(0, 2, 0),
+	outputs=(0, 0, 1),
+	per_body_buildings=2,
+	# head: Put y=1 underground at y=0 and y=2 above ground at y=0.
+	# Force output to right balance on the way out.
+	head_width=4,
+	head=Layout('head',
+		(1, 0, primitives.entity(E.belt, RIGHT)),
+		(2, 0, primitives.belt_to_ground(RIGHT)),
+		(3, 0, primitives.entity(E.belt, RIGHT)),
+		(0, 1, primitives.belt_from_ground(RIGHT)),
+		(1, 1, primitives.entity(E.belt, UP)),
+		(2, 1, primitives.medium_pole),
+		(3, 1, primitives.entity(E.belt, UP)),
+		(0, 2, primitives.belt_from_ground(RIGHT)),
+		(1, 2, primitives.entity(E.belt, RIGHT)),
+		(2, 2, primitives.entity(E.belt, RIGHT)),
+		(3, 2, primitives.entity(E.belt, UP)),
+		(1, 5, primitives.medium_pole),
+		(2, 5, primitives.entity(E.belt, DOWN)),
+		(3, 5, primitives.entity(E.splitter, LEFT, output_priority='right')),
+		(0, 6, primitives.belt_to_ground(LEFT)),
+		(1, 6, primitives.entity(E.belt, LEFT)),
+		(2, 6, primitives.entity(E.belt, LEFT)),
+	),
+	# body: A snake pattern for the second belt, with one inserter on each side
+	# so that the other side has space for a power pole.
+	# No space for output balancing, so output can only be a half-belt.
+	body_width=6,
+	body=lambda building: Layout('body',
+		(0, 0, primitives.entity(E.belt, RIGHT)),
+		(1, 0, primitives.entity(E.belt, DOWN)),
+		(2, 0, primitives.belt_from_ground(RIGHT)),
+		(3, 0, primitives.belt_to_ground(RIGHT)),
+		(4, 0, primitives.belt(RIGHT, 2)),
+		(0, 1, primitives.entity(E.inserter, UP)),
+		(1, 1, primitives.belt_to_ground(DOWN)),
+		(2, 1, primitives.entity(E.inserter, UP)),
+		(3, 1, primitives.entity(E.inserter, UP)),
+		(4, 1, primitives.belt_from_ground(UP)),
+		(5, 1, primitives.medium_pole),
+		(0, 2, building),
+		(3, 2, building),
+		(0, 5, primitives.entity(E.inserter, UP)),
+		(1, 5, primitives.belt_from_ground(DOWN)),
+		(2, 5, primitives.medium_pole),
+		(3, 5, primitives.entity(E.inserter, DOWN)),
+		(4, 5, primitives.belt_to_ground(UP)),
+		(5, 5, primitives.entity(E.inserter, UP)),
+		(0, 6, primitives.belt_from_ground(LEFT)),
+		(1, 6, primitives.belt(RIGHT, 3)),
+		(4, 6, primitives.entity(E.belt, UP)),
+		(5, 6, primitives.belt_to_ground(LEFT)),
+	),
+	# note tail goes a bit wider than the last thing put down, so that there's enough beacons
+	tail_width=3,
+	tail=pole_tail,
+)
