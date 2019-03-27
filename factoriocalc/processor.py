@@ -229,14 +229,70 @@ Processor('1 -> 1',
 		(0, 6, primitives.belt_to_ground(LEFT)),
 		(3, 6, primitives.belt(LEFT, 3)),
 	),
-	# body: couldn't be simpler. just a pair of assemblers with inserters and sharing
-	# power poles on each side
+	# body: Like 1->1 except with extra inserters
 	body_width=6,
 	body=lambda building: Layout('body',
 		(0, 0, primitives.belt(RIGHT, 6)),
 		(0, 1, entity(E.inserter, UP)),
 		(2, 1, primitives.medium_pole),
 		(3, 1, entity(E.inserter, UP)),
+		(0, 2, building),
+		(3, 2, building),
+		(0, 5, entity(E.belt, DOWN)),
+		(1, 5, entity(E.splitter, LEFT, output_priority='right')),
+		(2, 5, entity(E.inserter, UP)),
+		(3, 5, primitives.medium_pole),
+		(4, 5, entity(E.inserter, UP)),
+		(0, 6, entity(E.belt, LEFT)),
+		(5, 6, primitives.belt(LEFT, 4)),
+	),
+	# note tail goes a bit wider than the last thing put down, so that there's enough beacons
+	tail_width=3,
+	tail=pole_tail,
+)
+
+
+# Minor variation on the 1 -> 1 processor that joins two half-inputs.
+# Can support any of the 3x3 building types (furnaces, assemblers, chemical plants).
+# Note the double inserter on input, allowing one full inserter's throughput off the halfbelt.
+#   o>>|>>>>>>|
+#  ⊂>^<|iioii | o
+#  ⊂>>^|┌─┐┌─┐|
+#      |│F││F│|
+#      |└─┘└─┘|
+#    o |vSioi | o
+#  ⊂<<<|<s<<<<|
+Processor('2 half-belt in',
+	building=('furnace','assembler','chemical plant'),
+	inputs=(0, 0, 2),
+	outputs=(0, 1, 0),
+	per_body_buildings=2,
+	# head: Join y=1 and y=2 then direct them to y=0 for body.
+	head_width=4,
+	head=Layout('head',
+		(1, 0, primitives.medium_pole),
+		(2, 0, primitives.belt(RIGHT, 2)),
+		(0, 1, primitives.belt_from_ground(RIGHT)),
+		(1, 1, primitives.entity(E.belt, RIGHT)),
+		(2, 1, primitives.entity(E.belt, UP)),
+		(3, 1, primitives.entity(E.belt, LEFT)),
+		(0, 2, primitives.belt_from_ground(RIGHT)),
+		(1, 2, primitives.belt(RIGHT, 2)),
+		(3, 2, primitives.entity(E.belt, UP)),
+		(2, 5, primitives.medium_pole),
+		(0, 6, primitives.belt_to_ground(LEFT)),
+		(3, 6, primitives.belt(LEFT, 3)),
+	),
+	# body: couldn't be simpler. just a pair of assemblers with inserters and sharing
+	# power poles on each side
+	body_width=6,
+	body=lambda building: Layout('body',
+		(0, 0, primitives.belt(RIGHT, 6)),
+		(0, 1, entity(E.inserter, UP)),
+		(1, 1, entity(E.inserter, UP)),
+		(2, 1, primitives.medium_pole),
+		(3, 1, entity(E.inserter, UP)),
+		(4, 1, entity(E.inserter, UP)),
 		(0, 2, building),
 		(3, 2, building),
 		(0, 5, entity(E.belt, DOWN)),
