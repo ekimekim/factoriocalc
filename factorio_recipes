@@ -1,10 +1,11 @@
 
 # Buildings
 Assembler builds at 1.25 with 4 modules
-Chemical plant builds at 1.25 with 3 modules
+Chemical plant builds at 1 with 3 modules
 Furnace builds at 2 with 2 modules
 Refinery builds at 1 with 3 modules
 Rocket silo builds at 1 with 4 modules
+Centrifuge builds at 1 with 2 modules
 # This 'launch' building represents that the act of launching a rocket converts rockets to white science.
 # Its speed value is meaningless.
 Launch builds at 1, not affected by beacons
@@ -38,45 +39,46 @@ Oil products takes 5 in Refinery, 100 crude oil, 50 water, can take productivity
 20 Light oil cracking takes 3 in Chemical plant, 30 light oil, 30 water, can take productivity
 
 # Intermediate Products
-# Omitted: petroleum, light oil, heavy oil, all uranium products
+# Omitted: petroleum, light oil, heavy oil, uranium processing
 Green circuit takes 0.5 in assembler, 1 iron plate, 3 copper wire, can take productivity
 Red circuit takes 6 in assembler, 4 copper wire, 2 green circuit, 2 plastic, can take productivity
 Blue circuit takes 10 in assembler, 2 red circuit, 20 green circuit, 5 sulfuric acid, can take productivity
-Battery takes 5 in chemical plant, 1 copper plate, 1 iron plate, 20 sulfuric acid, can take productivity
-Copper plate takes 3.5 in furnace, 1 copper ore, can take productivity
+Battery takes 4 in chemical plant, 1 copper plate, 1 iron plate, 20 sulfuric acid, can take productivity
+Copper plate takes 3.2 in furnace, 1 copper ore, can take productivity
 2 Copper wire takes 0.5 in assembler, 1 copper plate, can take productivity
 Electric engine takes 10 in assembler, 2 green circuit, 1 engine, 15 lubricant, can take productivity
 Engine takes 10 in assembler, 1 gear, 2 pipe, 1 steel plate, can take productivity
-Explosives takes 5 in chemical plant, 1 coal, 1 sulfur, 10 water, can take productivity
+2 Explosives takes 4 in chemical plant, 1 coal, 1 sulfur, 10 water, can take productivity
 Robot frame takes 20 in assembler, 2 battery, 1 electric engine, 3 green circuit, 1 steel plate, can take productivity
 Gear takes 0.5 in assembler, 2 iron plate, can take productivity
-Iron plate takes 3.5 in furnace, 1 iron ore, can take productivity
+Iron plate takes 3.2 in furnace, 1 iron ore, can take productivity
 2 Iron Stick takes 0.5 in assembler, 1 iron plate, can take productivity
-Low density structure takes 30 in assembler, 5 copper plate, 5 plastic, 10 steel plate, can take productivity
+Low density structure takes 20 in assembler, 20 copper plate, 5 plastic, 2 steel plate, can take productivity
 10 lubricant takes 1 in chemical plant, 10 heavy oil, can take productivity
 2 plastic takes 1 in chemical plant, 1 coal, 20 petroleum, can take productivity
 Rocket control unit takes 30 in assembler, 1 blue circuit, 1 speed module, can take productivity
 Rocket fuel takes 30 in assembler, 10 solid fuel, can take productivity
-Satellite takes 3 in assembler, 100 accumulator, 100 low density structure, 100 blue circuit, 5 radar, 50 rocket fuel, 100 solar panel
-Solid fuel takes 3 in chemical plant, 10 light oil, can take productivity
-Steel plate takes 17.5 in furnace, 5 iron plate, can take productivity
+Nuclear fuel takes 90 in centrifuge, 1 rocket fuel, can take productivity
+Satellite takes 5 in assembler, 100 accumulator, 100 low density structure, 100 blue circuit, 5 radar, 50 rocket fuel, 100 solar panel
+Solid fuel takes 2 in chemical plant, 10 light oil, can take productivity
+Steel plate takes 16 in furnace, 5 iron plate, can take productivity
 2 sulfur takes 1 in chemical plant, 30 petroleum, 30 water, can take productivity
 50 sulfuric acid takes 1 in chemical plant, 1 iron plate, 5 sulfur, 100 water, can take productivity
-2 wood takes 0.5 in assembler, 1 raw wood, can take productivity
+10 fuel cell takes 10 in assembler, 10 iron plate, 1 U235, 19 U238
 
 # Science packs
 1 red science takes 5 in assembler, 1 copper plate, 1 gear, can take productivity
 1 green science takes 6 in assembler, 1 inserter, 1 yellow belt, can take productivity
-1 blue science takes 12 in assembler, 1 red circuit, 1 electric mining drill, 1 engine, can take productivity
-2 black science takes 10 in assembler, 1 grenade, 1 gun turret, 1 piercing ammo, can take productivity
-2 purple science takes 14 in assembler, 1 electric engine, 1 electric furnace, can take productivity
-2 yellow science takes 14 in assembler, 1 battery, 30 copper wire, 3 blue circuit, 1 speed module, can take productivity
+2 blue science takes 24 in assembler, 3 red circuit, 2 engine, 1 solid fuel, can take productivity
+2 black science takes 10 in assembler, 1 grenade, 1 piercing ammo, 2 wall, can take productivity
+3 purple science takes 21 in assembler, 1 electric furnace, 1 productivity module, 30 rail, can take productivity
+3 yellow science takes 21 in assembler, 1 robot frame, 3 low density structure, 2 blue circuit, can take productivity
 # We model white science as coming from a rocket + a sattelite. Since it has no actual 'build time'
 # we set it to a very low number so it will be pretty much always ignored.
 1000 white science takes 0.001 in launch, 1 rocket, 1 satellite
 
 # Logistics
-Wooden chest takes 0.5 in assembler, 4 wood
+Wooden chest takes 0.5 in assembler, 2 wood
 Iron chest takes 0.5 in assembler, 8 iron plate
 Steel chest takes 0.5 in assembler, 8 steel plate
 Storage tank takes 3 in assembler, 20 iron plate, 5 steel plate
@@ -84,8 +86,8 @@ Storage tank takes 3 in assembler, 20 iron plate, 5 steel plate
 Red belt takes 0.5 in assembler, 5 gear, 1 yellow belt
 Blue belt takes 0.5 in assembler, 1 red belt, 10 gear, 20 lubricant
 2 yellow underground belt takes 1 in assembler, 10 iron plate, 5 yellow belt
-2 red underground belt takes 0.5 in assembler, 40 gear, 2 yellow underground belt
-2 blue underground belt takes 0.5 in assembler, 2 red underground belt, 80 gear, 40 lubricant
+2 red underground belt takes 2 in assembler, 40 gear, 2 yellow underground belt
+2 blue underground belt takes 2 in assembler, 2 red underground belt, 80 gear, 40 lubricant
 yellow splitter takes 1 in assembler, 5 green circuit, 5 iron plate, 4 yellow belt
 red splitter takes 2 in assembler, 10 green circuit, 10 gear, 1 yellow splitter
 blue splitter takes 2 in assembler, 10 red circuit, 1 red splitter, 10 gear, 80 lubricant
@@ -96,53 +98,56 @@ fast inserter takes 0.5 in assembler, 2 green circuit, 1 inserter, 2 iron plate
 filter inserter takes 0.5 in assembler, 4 green circuit, 1 fast inserter
 stack inserter takes 0.5 in assembler, 1 red circuit, 15 green circuit, 1 blue circuit, 15 gear
 stack filter inserter takes 0.5 in assembler, 5 green circuit, 1 stack inserter
-2 small electric pole takes 0.5 in assembler, 2 copper wire, 2 wood
-medium electric pole takes 0.5 in assembler, 2 copper plate, 2 steel plate
-big electric pole takes 0.5 in assembler, 5 copper plate, 5 steel plate
+2 small electric pole takes 0.5 in assembler, 2 copper wire, 1 wood
+medium electric pole takes 0.5 in assembler, 2 copper plate, 4 iron stick, 2 steel plate
+big electric pole takes 0.5 in assembler, 5 copper plate, 8 iron stick, 5 steel plate
 substation takes 0.5 in assembler, 5 copper plate, 10 steel plate, 5 red circuit
 pipe takes 0.5 in assembler, 1 iron plate
 2 underground pipe takes 0.5 in assembler, 5 iron plate, 10 pipe
 pump takes 2 in assembler, 1 engine, 1 pipe, 1 steel plate
 2 rail takes 0.5 in assembler, 1 iron stick, 1 steel plate, 1 stone
-train stop takes 0.5 in assembler, 5 green circuit, 10 iron plate, 3 steel plate
+train stop takes 0.5 in assembler, 5 green circuit, 6 iron plate, 6 iron stick, 3 steel plate
 rail signal takes 0.5 in assembler, 1 green circuit, 5 iron plate
 rail chain signal takes 0.5 in assembler, 1 green circuit, 5 iron plate
-locomotive takes 0.5 in assembler, 10 green circuit, 20 engine, 30 steel plate
-cargo wagon takes 0.5 in assembler, 10 gear, 20 iron plate, 20 steel plate
+locomotive takes 4 in assembler, 10 green circuit, 20 engine, 30 steel plate
+cargo wagon takes 1 in assembler, 10 gear, 20 iron plate, 20 steel plate
 fluid wagon takes 1.5 in assembler, 10 gear, 8 pipe, 16 steel plate, 3 storage tank
-car takes 0.5 in assembler, 8 engine, 20 iron plate, 5 steel plate
-tank takes 0.5 in assembler, 10 red circuit, 32 engine, 15 gear, 50 steel plate
+artillery wagon takes 4 in assembler, 20 red circuit, 64 engine, 10 gear, 16 pipe, 40 steel
+car takes 2 in assembler, 8 engine, 20 iron plate, 5 steel plate
+tank takes 5 in assembler, 10 red circuit, 32 engine, 15 gear, 50 steel plate
 logistic robot takes 0.5 in assembler, 2 red circuit, 1 robot frame
 construction robot takes 0.5 in assembler, 2 green circuit, 1 robot frame
 active provider chest takes 0.5 in assembler, 1 red circuit, 3 green circuit, 1 steel chest
 passive provider chest takes 0.5 in assembler, 1 red circuit, 3 green circuit, 1 steel chest
 storage chest takes 0.5 in assembler, 1 red circuit, 3 green circuit, 1 steel chest
+buffer chest takes 0.5 in assembler, 1 red circuit, 3 green circuit, 1 steel chest
 requester chest takes 0.5 in assembler, 1 red circuit, 3 green circuit, 1 steel chest
-roboport takes 10 in assembler, 45 red circuit, 45 gear, 45 steel plate
-lamp takes 0.5 in assembler, 1 green circuit, 1 iron plate, 3 iron stick
+roboport takes 5 in assembler, 45 red circuit, 45 gear, 45 steel plate
+lamp takes 0.5 in assembler, 1 green circuit, 1 iron plate, 3 copper wire
 red wire takes 0.5 in assembler, 1 green circuit, 1 copper wire
 green wire takes 0.5 in assembler, 1 green circuit, 1 copper wire
 arithmetic combinator takes 0.5 in assembler, 5 copper wire, 5 green circuit
 decider combinator takes 0.5 in assembler, 5 copper wire, 5 green circuit
 constant combinator takes 0.5 in assembler, 5 copper wire, 2 green circuit
 power switch takes 2 in assembler, 5 copper wire, 2 green circuit, 5 iron plate
-speaker takes 2 in assembler, 5 copper wire, 4 green circuit, 5 iron plate
-stone brick takes 3.5 in furnace, 2 stone
+speaker takes 2 in assembler, 5 copper wire, 4 green circuit, 3 iron plate, 4 iron stick
+stone brick takes 3.2 in furnace, 2 stone
 10 concrete takes 10 in assembler, 1 iron ore, 5 stone brick, 100 water
 10 hazard concrete takes 0.25 in assembler, 10 concrete
+10 refined conrete takes 15 in assembler, 20 concrete, 8 iron stick, 1 steel plate, 100 water
+10 refined hazard concrete takes 0.25 in assembler, 10 refined concrete
 landfill takes 0.5 in assembler, 20 stone
+cliff explosives takes 8 in assembler, 1 barrel, 10 explosives, 1 grenade
 
 # Production
-Iron axe takes 0.5 in assembler, 3 iron plate, 2 iron stick
-Steel axe takes 0.5 in assembler, 5 steel plate, 2 iron stick
 Repair pack takes 0.5 in assembler, 2 green circuit, 2 gear
 Boiler takes 0.5 in assembler, 4 pipe, 1 stone furnace
 Steam engine takes 0.5 in assembler, 8 gear, 10 iron plate, 5 pipe
 Steam turbine takes 0.5 in assembler, 50 copper plate, 50 gear, 20 pipe
 Solar panel takes 10 in assembler, 5 copper plate, 15 green circuit, 5 steel plate
 Accumulator takes 10 in assembler, 5 battery, 2 iron plate
-Nuclear reactor takes 4 in assembler, 500 red circuit, 500 concrete, 500 copper plate, 500 steel plate
-Heat exchanger takes 0.5 in assembler, 100 copper plate, 10 pipe, 10 steel plate
+Nuclear reactor takes 8 in assembler, 500 red circuit, 500 concrete, 500 copper plate, 500 steel plate
+Heat exchanger takes 3 in assembler, 100 copper plate, 10 pipe, 10 steel plate
 Heat pipe takes 0.5 in assembler, 20 copper plate, 10 steel plate
 Burner mining drill takes 2 in assembler, 3 gear, 3 iron plate, 1 stone furnace
 Electric mining drill takes 2 in assembler, 3 green circuit, 5 gear, 10 iron plate
@@ -152,12 +157,12 @@ Stone furnace takes 0.5 in assembler, 5 stone
 Steel furnace takes 3 in assembler, 6 steel plate, 10 stone brick
 Electric furnace takes 5 in assembler, 5 red circuit, 10 steel plate, 10 stone brick
 Assembly machine 1 takes 0.5 in assembler, 3 green circuit, 5 gear, 9 iron plate
-Assembly machine 2 takes 0.5 in assembler, 1 assembly machine 1, 3 green circuit, 5 gear, 9 iron plate
+Assembly machine 2 takes 0.5 in assembler, 1 assembly machine 1, 3 green circuit, 5 gear, 2 steel plate
 Assembly machine 3 takes 0.5 in assembler, 2 assembly machine 2, 4 speed module
 Oil refinery takes 10 in assembler, 10 green circuit, 10 gear, 10 pipe, 15 steel plate, 10 stone brick
 Chemical plant takes 5 in assembler, 5 green circuit, 5 gear, 5 pipe, 5 steel plate
 Centrifuge takes 4 in assembler, 100 red circuit, 100 concrete, 100 gear, 50 steel plate
-Lab takes 3 in assembler, 10 green circuit, 10 gear, 4 yellow belt
+Lab takes 2 in assembler, 10 green circuit, 10 gear, 4 yellow belt
 Beacon takes 15 in assembler, 20 red circuit, 10 copper wire, 20 green circuit, 10 steel plate
 Speed module takes 15 in assembler, 5 red circuit, 5 green circuit
 Speed module 2 takes 30 in assembler, 5 red circuit, 5 blue circuit, 4 speed module
@@ -175,3 +180,4 @@ Piercing ammo takes 3 in assembler, 5 copper plate, 1 ammo, 1 steel plate
 Ammo takes 1 in assembler, 4 iron plate
 Gun turret takes 8 in assembler, 10 copper plate, 10 gear, 20 iron plate
 Grenade takes 8 in assembler, 10 coal, 5 iron plate
+Wall takes 0.5 in assembler, 5 stone brick
