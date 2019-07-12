@@ -247,7 +247,11 @@ def layout_in_outs(step, process_base_x):
 					place_at_index(bus_index)
 					break
 			else:
-				raise ValueError("Failed to place horizontal line")
+				raise ValueError((
+					"Failed to place horizontal line for input or output - "
+					"too many contiguous on/offramps from {} to {} "
+					"means we can't cross it with an underground line."
+				).format(bus_index + 1, bus_index + 4))
 
 	# inputs (off-ramps and right-running lines)
 	for bus_index, y_slot in step.inputs.items():
