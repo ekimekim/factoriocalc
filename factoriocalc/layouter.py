@@ -11,35 +11,37 @@ from .util import is_liquid, UP, RIGHT, DOWN, LEFT, Layout, line_limit
 # Steps are layed out as beacon row, processing row, beacon row, etc.
 # Processing rows are 7 high, and becaons are 3, so the pattern repeats every 10 units.
 # The bus area available for a given step is from 2 above the processing area to 1 below.
-# Up to 2 columns of padding is then added to keep beacons aligned to a multiple of 3.
+# Between 1 and 3 columns of padding is then added to keep beacons aligned to a multiple of 3.
+# We always add at least one padding as this is also the space we use to surface all the inputs/outputs.
 # Power is passed to process via a medium electric poll on the rightmost bus line top.
 # Visual: (b is beacon, e is substation, p is process, X is not allowed, + is optional padding, _ is usable)
-#   XXXXXXXXbbb
-#   _____e++bbb
-#   ______++bbb
-#   ______++ppp
-#   ______++ppp
-#   ______++ppp
-#   ______++ppp
-#   ______++ppp
-#   ______++ppp
-#   ______++ppp
-#   ______++bbb
-#   XXXXXXXXbbb
-#   XXXXXXXXbbb
+#   XXXXXXXXXbbb
+#   _____e+++bbb
+#   ______+++bbb
+#   ______+++ppp
+#   ______+++ppp
+#   ______+++ppp
+#   ______+++ppp
+#   ______+++ppp
+#   ______+++ppp
+#   ______+++ppp
+#   ______+++bbb
+#   XXXXXXXXXbbb
+#   XXXXXXXXXbbb
 # There's also another section for electric poles at the other end,
 # this ensures rows are linked by power even if the bus width varies wildly.
 
 # Note this implies the guarentees we give a processing step primitive:
-# * Inputs arrive at given y slots
-# * Outputs are expected at given y slots
+# * Inputs arrive (on surface) at given y slots
+# * Outputs are expected (on surface) at given y slots
 # * The area will have beacons above and below, but not nessecarily extending past
 #   the edges, so care must be taken to have buildings fully covered, they must be off the edge a little.
-# * Power is provided from a medium electric poll offset from the top-left corner by (1-3, 2),
-#   OR offset from the bottom-left corner by (1-3, -2).
+# * Power is provided from a medium electric poll offset from the top-left corner by (2-4, 2),
+#   OR offset from the bottom-left corner by (2-4, -2).
 #   This is needed because if the bus shrinks this step, the next step's beacons may extend further left
 #   than your base x, so the lower pole won't be there. But if the bus expands this step, the opposite is true.
 #   Since the bus can't shrink AND expand simultaniously, at least one will be present.
+# TODO in roboport rows, bottom pole isn't there. that should be fixed.
 
 # Each line in the bus is seperated by a 1 unit gap.
 # In general each action involving a line in the bus area should keep to its own column
@@ -62,6 +64,16 @@ from .util import is_liquid, UP, RIGHT, DOWN, LEFT, Layout, line_limit
 #   __________
 # This gets in the way of the y-slot for 2 tiles, but we assume there'll never be
 # more than 4 of these in a row, so a blue underground belt can still pass under.
+
+# At the end of each y-slot, we have 1-3 tiles of padding in which to surface
+# our inputs and outputs.
+# If there's one tile, it's easy - just surface.
+# If there's two/three tiles, then for belts it's easy - surface then 1-2 belts.
+# However, a problem arises with pipes, since they might try to join onto pipes
+# above or below them. We solve this for 3 tiles by going surface/underground/surface.
+# For 2 tiles, we make use of the fact that underground pipes can go 9 tiles underground,
+# even though all our assumptions below treat pipes and belts as both having an 8-tile limit.
+# We make use of the extra tile to just do blank, then surface.
 
 # start bus at 4 so we can have a line of power and roboports on left
 BUS_START_X = 4
@@ -135,11 +147,16 @@ def layout_step(step):
 	"""
 	layout = Layout(str(step))
 	bus_width = step.width * 2
+	# We need at least one extra column in addition to the bus, in order to surface all
+	# our input/output lines. This space can also be two or three columns in order to
+	# line up the process with the beacon rows. We call this space our "padding".
 	padding = 3 - (bus_width + BUS_START_X) % 3
+	if padding == 0:
+		padding = 3
 	process_base_x = bus_width + BUS_START_X + padding
 	assert process_base_x % 3 == 0
 
-	layout.place(0, 0, layout_bus(step, process_base_x))
+	layout.place(0, 0, layout_bus(step, padding, process_base_x))
 	if isinstance(step, Placement):
 		process_layout, process_width = layout_process(step)
 		layout.place(process_base_x, 0, process_layout)
@@ -150,7 +167,7 @@ def layout_step(step):
 	return layout, process_base_x, process_end
 
 
-def layout_bus(step, process_base_x):
+def layout_bus(step, padding, process_base_x):
 	"""Layout the bus area for the given step. This includes:
 	* Running power along the bus
 	* Running unused lines through to the step below
@@ -184,7 +201,7 @@ def layout_bus(step, process_base_x):
 			layout.place(bus_x + 1, -2, primitives.medium_pole)
 
 	if isinstance(step, Placement):
-		layout.place(0, 0, layout_in_outs(step, process_base_x))
+		layout.place(0, 0, layout_in_outs(step, padding, process_base_x))
 	else:
 		layout.place(0, 0, layout_compaction(step))
 	return layout
@@ -197,16 +214,18 @@ def layout_beacons(width):
 	return layout
 
 
-def layout_in_outs(step, process_base_x):
+def layout_in_outs(step, padding, process_base_x):
 	"""Return the parts needed to connect inputs and outputs
 	from the bus to the process.
 	"""
-	# Each in-out has two parts:
+	# Each in-out has three parts:
 	# * The actual split or join component, which occupies
 	#   the area (line_x, -2) to (line_x + 1, 8)
-	# * The line running horizontally from that component to the edge of the process area,
+	# * The underground line running horizontally from that component to the edge of the process area,
 	#   which must run on the assigned y_slot and go under any
 	#   split/join components between it and the process.
+	#   It comes up for air at least every 8 tiles.
+	# * The padding, where we surface.
 	# Note: Since we can only go under 8 tiles max, it may end up that >4 split/joins back-to-back
 	# prevent a 5th inout from running under them. But this is extremely unlikely, so we're just
 	# going to die if we encounter it and hope we don't.
@@ -215,17 +234,7 @@ def layout_in_outs(step, process_base_x):
 
 	# Set up some vars for horiz_line
 	used = set(step.inputs.keys() + step.outputs.keys()) # bus indexes that have an on/off ramp
-	# Some notes on padding. There are 3 cases:
-	#  no padding - no problem
-	#  two padding - extra double column is treated as extra bus line, no problem
-	#  one padding - special case. We need to treat it as an occupied bus line,
-	#  otherwise we might try to put a surface there, which will collide with the left-most
-	#  column of the process area.
-	target_index = (process_base_x - BUS_START_X) / 2
-	if (process_base_x - BUS_START_X) % 2 == 1:
-		# uneven padding, forbid the last "line"
-		used.add(target_index)
-		target_index += 1
+	target_index = (process_base_x - padding - BUS_START_X) / 2
 
 	def horiz_line(item, bus_index, y_slot, orientation):
 		# Assumes up-line at bus_index is already placed.
@@ -253,6 +262,32 @@ def layout_in_outs(step, process_base_x):
 					"means we can't cross it with an underground line."
 				).format(bus_index + 1, bus_index + 4))
 
+	def surfacing(item, orientation):
+		# what's our into/out of ground primitive? a pipe or a belt, and for belt which one?
+		sub_layout = Layout('padding row')
+		if is_liquid(item):
+			right_pipe = primitives.entity(primitives.E.underground_pipe, RIGHT)
+			if padding == 1:
+				# easy case, just surface
+				sub_layout.place(0, 0, right_pipe)
+			elif padding == 2:
+				# same but place it one to the right
+				sub_layout.place(1, 0, right_pipe)
+			else:
+				# go up, then down, then up again
+				sub_layout.place(0, 0, primitives.pipe_surface(RIGHT))
+				sub_layout.place(2, 0, right_pipe)
+		else:
+			# first, surface
+			sub_layout.place(0, 0,
+				primitives.belt_from_ground(RIGHT) if orientation == RIGHT
+				else primitives.belt_to_ground(LEFT)
+			)
+			# then fill remaining space with belts
+			for i in range(1, padding):
+				sub_layout.place(i, 0, primitives.belt(orientation, 1))
+		return sub_layout
+
 	# inputs (off-ramps and right-running lines)
 	for bus_index, y_slot in step.inputs.items():
 		bus_x = BUS_START_X + 2 * bus_index
@@ -270,6 +305,8 @@ def layout_in_outs(step, process_base_x):
 		layout.place(bus_x, -2, primitive)
 		# run the line right to the end of the bus
 		horiz_line(line.item, bus_index, y_slot, RIGHT)
+		# place the surfacing in the padding area
+		layout.place(BUS_START_X + 2 * target_index, y_slot, surfacing(line.item, RIGHT))
 
 	# outputs (on-ramps and left-running lines)
 	for bus_index, (item, y_slot) in step.outputs.items():
@@ -284,6 +321,8 @@ def layout_in_outs(step, process_base_x):
 		layout.place(bus_x, y_slot, primitive)
 		# run the line left from end of bus to here
 		horiz_line(item, bus_index, y_slot, LEFT)
+		# place the surfacing in the padding area
+		layout.place(BUS_START_X + 2 * target_index, y_slot, surfacing(item, LEFT))
 
 	return layout
 

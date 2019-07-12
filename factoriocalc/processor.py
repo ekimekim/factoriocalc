@@ -207,12 +207,12 @@ pole_tail = Layout('pole tail',
 # Simple processor for basic 1 -> 1 belt recipes, eg. all smelting, iron gears.
 # Can support any of the 3x3 building types (furnaces, assemblers, chemical plants).
 #   >>>|>>>>>>|
-#  ⊂^o |i oi  | o
+#  >^o |i oi  | o
 #      |┌─┐┌─┐|
 #      |│F││F│|
 #      |└─┘└─┘|
 #    o |vSioi | o
-#  ⊂<<<|<s<<<<|
+#  <<<<|<s<<<<|
 Processor('1 -> 1',
 	building=('furnace','assembler','chemical plant'),
 	inputs=(0, 1, 0),
@@ -222,11 +222,11 @@ Processor('1 -> 1',
 	head_width=4,
 	head=Layout('head',
 		(1, 0, primitives.belt(RIGHT, 3)),
-		(0, 1, primitives.belt_from_ground(RIGHT)),
+		(0, 1, primitives.entity(E.belt, RIGHT)),
 		(1, 1, primitives.entity(E.belt, UP)),
 		(2, 1, primitives.medium_pole),
 		(2, 5, primitives.medium_pole),
-		(0, 6, primitives.belt_to_ground(LEFT)),
+		(0, 6, primitives.entity(E.belt, LEFT)),
 		(3, 6, primitives.belt(LEFT, 3)),
 	),
 	# body: couldn't be simpler. just a pair of assemblers with inserters and sharing
