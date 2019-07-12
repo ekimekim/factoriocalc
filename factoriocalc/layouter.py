@@ -224,9 +224,9 @@ def layout_in_outs(step, padding, process_base_x):
 	# * The underground line running horizontally from that component to the edge of the process area,
 	#   which must run on the assigned y_slot and go under any
 	#   split/join components between it and the process.
-	#   It comes up for air at least every 8 tiles.
+	#   It comes up for air at least every 10 tiles (ie. max 8 underground).
 	# * The padding, where we surface.
-	# Note: Since we can only go under 8 tiles max, it may end up that >4 split/joins back-to-back
+	# Note: Since we can only go under 8 tiles max, it may end up that >5 split/joins back-to-back
 	# prevent a 5th inout from running under them. But this is extremely unlikely, so we're just
 	# going to die if we encounter it and hope we don't.
 
@@ -246,11 +246,11 @@ def layout_in_outs(step, padding, process_base_x):
 			y_slot,
 			primitive,
 		)
-		# We keep trying to go 4 indexes (8 tiles) at a time, if we're blocked
+		# We keep trying to go 5 indexes (10 tiles) at a time, if we're blocked
 		# then we walk back left until we find a placable position.
 		# We stop when we're in range of process_base_x.
-		while bus_index + 4 < target_index:
-			for delta in range(4, 0, -1):
+		while bus_index + 5 < target_index:
+			for delta in range(5, 0, -1):
 				if bus_index + delta not in used:
 					bus_index += delta
 					place_at_index(bus_index)
@@ -260,7 +260,7 @@ def layout_in_outs(step, padding, process_base_x):
 					"Failed to place horizontal line for input or output - "
 					"too many contiguous on/offramps from {} to {} "
 					"means we can't cross it with an underground line."
-				).format(bus_index + 1, bus_index + 4))
+				).format(bus_index + 1, bus_index + 5))
 
 	def surfacing(item, orientation):
 		# what's our into/out of ground primitive? a pipe or a belt, and for belt which one?
