@@ -58,6 +58,7 @@ class ArtEncoder(object):
 		E.inserter: green([['i']]),
 		E.assembler: yellow(boxed("A")),
 		E.furnace: blue(boxed("F")),
+		E.refinery: green(boxed("R", n=5)), # oil drum
 		E.belt: lambda obj: blue([[
 			{
 				0: '^',
@@ -128,3 +129,21 @@ class ArtEncoder(object):
 						))
 					char = red('!', bold=True)
 				grid[this_y][this_x] = char
+
+
+def from_blueprint(show_conflicts=False, verbose=False):
+	"""Read a blueprint from stdin, and print the art-encoded form"""
+	import sys
+	from . import blueprint
+	data = sys.stdin.read()
+	entities = blueprint.lossy_decode(data.strip())
+	if verbose:
+		orient_map = ['UP', 'RIGHT', 'DOWN', 'LEFT']
+		for pos, entity in sorted(entities):
+			print pos.x, pos.y, entity.name, orient_map[entity.orientation], entity.attrs
+	print ArtEncoder(not show_conflicts).encode(entities)
+
+
+if __name__ == '__main__':
+	import argh
+	argh.dispatch_command(from_blueprint)

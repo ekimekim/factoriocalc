@@ -50,6 +50,7 @@ class _Entities(object):
 	prod_module = 'productivity-module-3'
 	prod_3 = prod_module
 	gear = 'iron-gear-wheel'
+	refinery = 'oil-refinery'
 
 	def __getitem__(self, key):
 		return getattr(self, key.replace(' ', '_'), key.replace(' ', '-'))
