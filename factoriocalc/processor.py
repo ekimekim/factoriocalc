@@ -1,6 +1,7 @@
 # -encoding: utf-8-
 
 import math
+import os
 from collections import namedtuple, Counter
 
 from . import primitives
@@ -54,6 +55,7 @@ class Processor(object):
 	and must pad out enough width that all buildings are maximally covered by beacons.
 	"""
 	PROCESSORS = []
+	MATCH_CACHE = {} # this is here more for debugging than performance, it maps (building, inputs, outputs) -> processor
 	MAX_INSERT_RATE = 11.6 # worst case items/sec of stack inserter
 
 	def __init__(self, name,
@@ -112,17 +114,34 @@ class Processor(object):
 	def find_processor(cls, building, inputs, outputs):
 		"""Inputs and outputs should be tuples (liquid, full belt, half belt).
 		Returns processor or raises."""
+		cache_key = building, inputs, outputs
+		if cache_key in cls.MATCH_CACHE:
+			return cls.MATCH_CACHE[cache_key]
 		inputs = InOutKinds(*inputs)
 		outputs = InOutKinds(*outputs)
 		candidates = [processor for processor in cls.PROCESSORS if processor.match_score(building, inputs, outputs)]
+		report_match = os.environ.get('FACTORIOCALC_PROCESSOR_MATCHES', '')
+		verbose = report_match.lower() == 'verbose'
+		in_str, out_str = map(
+			tuple if verbose else lambda (l,b,h): (l, b+h),
+		(inputs, outputs))
 		if not candidates:
+			if report_match:
+				print "No match for {} with {} -> {}".format(building, in_str, out_str)
 			raise ValueError("Could not find processor for {} with {} inputs and {} outputs".format(
 				building, inputs, outputs
 			))
-		return min(
+		ret = min(
 			candidates,
 			key=lambda processor: processor.match_score(building, inputs, outputs),
 		)
+		if report_match:
+			print "Match for {} with {} -> {}: {} with score {}".format(
+				building, in_str, out_str,
+				ret.name, ret.match_score(building, inputs, outputs),
+			)
+		cls.MATCH_CACHE[cache_key] = ret
+		return ret
 
 	def determine_bodies(self, step):
 		"""Work out how many body sections are needed for the given step."""
@@ -203,6 +222,20 @@ pole_tail = Layout('pole tail',
 
 
 # Processors
+
+# TODO List - min needed for 1000SPM inf science
+# * rocket silo 0/0/4 -> 0/0/1
+# * lab 0/0/7 -> 0/0/0
+# * chemical plant:
+#     2/0/0 -> 1/0/0 (eg. cracking)
+#     2/0/0 -> 0/0/1 (eg. sulfur)
+#     1/0/2 -> 1/0/0 (eg. sulfuric acid)
+#     1/0/2 -> 0/1/0 (eg. battery)
+# * assembler:
+#     1/1/1 -> 0/0/1
+#     0/0/6 -> 0/0/1 (eg. satellte)
+#     0/0/3 -> 0/1/0
+#     0/2/1 -> 0/0/1
 
 # Simple processor for basic 1 -> 1 belt recipes, eg. all smelting, iron gears.
 # Can support any of the 3x3 building types (furnaces, assemblers, chemical plants).
