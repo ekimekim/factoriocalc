@@ -259,7 +259,7 @@ def split_into_steps(processes, input_limit=None, input_liquid_limit=None):
 	where each step uses no more than 1 belt for each input or output.
 	To prevent balance issues, all but the final step is maximised, ie.
 	scaled to the point that one or more inputs or outputs is running at exactly
-	40 items/sec.
+	45 items/sec.
 	Since raw inputs aren't really a "step", it returns them seperately.
 	Inputs are optionally split by lower limits input_limit and input_liquid_limit.
 	Returns (steps, inputs)

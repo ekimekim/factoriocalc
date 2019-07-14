@@ -54,7 +54,7 @@ class Processor(object):
 	and must pad out enough width that all buildings are maximally covered by beacons.
 	"""
 	PROCESSORS = []
-	MAX_INSERT_RATE = 12 # worst case items/sec of stack inserter
+	MAX_INSERT_RATE = 11.6 # worst case items/sec of stack inserter
 
 	def __init__(self, name,
 		building='assembler',

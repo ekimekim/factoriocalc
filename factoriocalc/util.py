@@ -57,6 +57,6 @@ def line_limit(item):
 		# 17/tick for pipe lengths up to 166 long. This is a conservative
 		# limit that just means I don't need to worry about it.
 		return Fraction(17*60)
-	return Fraction(40) # full blue belt
+	return Fraction(45) # full blue belt
 
 UP, RIGHT, DOWN, LEFT = range(4)
