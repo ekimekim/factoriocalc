@@ -51,6 +51,8 @@ class _Entities(object):
 	prod_3 = prod_module
 	gear = 'iron-gear-wheel'
 	refinery = 'oil-refinery'
+	# not entities but still a recipe name
+	oil_products = 'advanced-oil-processing'
 
 	def __getitem__(self, key):
 		return getattr(self, key.replace(' ', '_'), key.replace(' ', '-'))
