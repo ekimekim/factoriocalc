@@ -14,16 +14,23 @@ Recipe = namedtuple("Recipe", [
 	"inputs", # a map {item name: amount consumed per output produced} for each input
 	          # not including productivity
 	"can_prod", # boolean, whether this recipe can use productivity modules
+	"delay", # For some things (currently only rocket launches), an unavoidable delay
+	         # (the launch itself) must complete before the next process can start.
+	         # The difference between this delay and 1/throughput is it's unaffected by modules.
+	         # This delay value, like all other values here, is per output.
+	"fixed_inputs", # as per inputs, but is not affected by productivity
+	"is_virtual", # boolean. Virtual processes don't produce an actual output that needs to be moved.
+	              # For example, research, power and non-satellite rocket launches.
 ])
 
 # As Recipe unless noted
 ResolvedRecipe = namedtuple("ResolvedRecipe", [
 	"name",
 	"building",
-	"throughput", # adjusted for building's speed and productivity
+	"is_virtual",
+	"throughput", # adjusted for building's speed, productivity and delay
 	"inputs", # adjusted for building's productivity
 	"mods", # list of names of modules in the building
-	"beacons", # total speed effect of beacons on the building
 ])
 
 Building = namedtuple("Building", [
@@ -73,7 +80,9 @@ class Datafile(object):
 		For example:
 			Assembler builds at 1.25 with 4 modules
 		Recipe lines look like:
-			[AMOUNT ]OUTPUT takes TIME in BUILDING{, AMOUNT INPUT}[, can take productivity]
+			[AMOUNT ]OUTPUT takes TIME in BUILDING{, AMOUNT INPUT}[, can take productivity][, plus TIME delay]{, plus AMOUNT INPUT}[, is virtual]
+		with delay and "plus" items being unaffected by modules (this is needed for some special cases).
+		Virtual processes are ones that don't produce a physical output, eg. research labs.
 		For example:
 			Green circuit takes 0.5 in assembler, 1 iron plate, 3 copper wire, can take productivity
 			2 transport belt takes 0.5 in assembler, 1 iron plate, 1 gear
@@ -107,9 +116,27 @@ class Datafile(object):
 					buildings[name] = Building(name, Fraction(speed), mods, can_beacon)
 					continue
 
-				match = re.match('^(\d+ )?(.+) takes ([0-9.]+) in ([^,]+)((?:, [0-9.]+ [^,]+)*)(, can take productivity)?$', line)
+				match = re.match(
+					'^(\d+ )?(.+) takes ([0-9.]+) in ([^,]+)'
+					'((?:, [0-9.]+ [^,]+)*)'
+					'(, can take productivity)?'
+					'(?:, plus ([0-9.]+) delay)?'
+					'((?:, plus [0-9.]+ [^,]+)*)'
+					'(, is virtual)?'
+					'$'
+				, line)
 				if match:
-					amount, name, time, building, inputs_str, prod = match.groups()
+					(
+						amount,
+						name,
+						time,
+						building,
+						inputs_str,
+						prod,
+						delay,
+						fixed_inputs_str,
+						is_virtual
+					) = match.groups()
 					amount = Fraction(amount if amount else 1)
 					time = Fraction(time)
 					name = name.lower()
@@ -123,9 +150,19 @@ class Datafile(object):
 							input_amount, input_name = part.split(' ', 1)
 							input_amount = Fraction(input_amount)
 							inputs[input_name] = input_amount / amount
+					delay = Fraction(delay if delay else 0) / amount
+					fixed_inputs = {}
+					if fixed_inputs_str:
+						for part in fixed_inputs_str.split(','):
+							part = part.strip()
+							if not part:
+								continue
+							_, input_amount, input_name = part.split(' ', 2)
+							input_amount = Fraction(input_amount)
+							fixed_inputs[input_name] = input_amount / amount
 					if name in items:
 						raise ValueError('Recipe for {!r} already declared'.format(name))
-					items[name] = Recipe(name, building, amount / time, inputs, prod)
+					items[name] = Recipe(name, building, amount / time, inputs, prod, delay, fixed_inputs, is_virtual)
 					continue
 
 				match = re.match('^([^,]+) module affects speed ([^,]+)(?:, prod ([^,]+))?$', line)
@@ -152,27 +189,23 @@ class Datafile(object):
 
 		return items, buildings, modules
 
-	def reresolve_recipe(self, recipe, beacon_speed):
-		"""Takes a resolved recipe and adjusts it to a new beacon speed.
-		This can be done without impacting total input/output amounts so it
-		doesn't affect other rows, making this suitable for specialising recipes
-		for particular layouts that only have a certain number of beacons built in."""
-		new = self.resolve_recipe(self.recipes[recipe.item], recipe.mods, beacon_speed)
-		assert new.mods == recipe.mods
-		assert new.inputs == recipe.inputs
-		return new
-
 	def resolve_recipe(self, recipe, module_priorities, beacon_speed=0):
 		"""Resolves a generic recipe into a concrete per-building value,
 		for a given module priority spec and beacon speed level."""
 		speed, prod, modlist = self.calc_mods(recipe, module_priorities, beacon_speed)
+		throughput_no_delay = recipe.throughput * speed * prod
+		period_no_delay = 1 / throughput_no_delay
+		period = period_no_delay + recipe.delay
 		return ResolvedRecipe(
 			name = recipe.name,
 			building = recipe.building,
-			throughput = recipe.throughput * speed * prod,
-			inputs = {k: v / prod for k, v in recipe.inputs.items()},
+			is_virtual = recipe.is_virtual,
+			throughput = 1 / period,
+			inputs = {
+				item: recipe.inputs.get(item, 0) / prod + recipe.fixed_inputs.get(item, 0)
+				for item in set(recipe.inputs) | set(recipe.fixed_inputs)
+			},
 			mods = modlist,
-			beacons = beacon_speed,
 		)
 
 	def calc_mods(self, recipe, priorities, beacon_speed):
@@ -198,3 +231,21 @@ class Datafile(object):
 			used.append(name)
 
 		return recipe.building.speed * (1 + speed_total), 1 + prod_total, used
+
+
+def dump_datafile(path='./factorio_recipes', module_priorities=['prod 3'] * 4 + ['speed 3'] * 4, beacon_speed=4):
+	"""Test a datafile by dumping the parsed data as json, followed by the resolved recipes with the given args."""
+	import json
+	datafile = Datafile(path)
+	print json.dumps(datafile.recipes, indent=4, default=str)
+	print json.dumps(datafile.buildings, indent=4, default=str)
+	print json.dumps(datafile.modules, indent=4, default=str)
+	print json.dumps({
+		item: datafile.resolve_recipe(recipe, module_priorities, beacon_speed)
+		for item, recipe in datafile.recipes.items()
+	}, indent=4, default=str)
+
+
+if __name__ == '__main__':
+	import argh
+	argh.dispatch_command(dump_datafile)

@@ -17,7 +17,12 @@ class Process(object):
 		self.item = item
 		self.recipe = recipe
 		self.throughput = throughput
-		self.per_process_outputs = {item: 1} if outputs is None else outputs
+		if outputs:
+			self.per_process_outputs = outputs
+		elif self.recipe and self.recipe.is_virtual:
+			self.per_process_outputs = {}
+		else:
+			self.per_process_outputs = {item: 1}
 
 	@property
 	def is_input(self):

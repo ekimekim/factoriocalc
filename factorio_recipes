@@ -6,11 +6,10 @@ Furnace builds at 2 with 2 modules
 Refinery builds at 1 with 3 modules
 Rocket silo builds at 1 with 4 modules
 Centrifuge builds at 1 with 2 modules
-# This 'launch' building represents that the act of launching a rocket converts rockets to white science.
-# Its speed value is meaningless.
-Launch builds at 1, not affected by beacons
-# Lab building is used for one unit of 'science researched', see 'infinite science'
-Lab builds at 1 with 2 modules
+# Lab building "builds" research, where 1 process completed consumes 1 pack.
+# The build speed is determined by the level of lab research speed researched.
+# We assume full research = +250% = 3.5 speed.
+Lab builds at 3.5 with 2 modules
 
 # Modules. Note the short names for easier typing on cli.
 speed 1 module affects speed .2
@@ -25,11 +24,13 @@ prod 3 module affects speed -.15, prod .1
 # the non-parallelizable nature of it and that the actual launch takes time during which you
 # can't build more rocket parts. So we represent rocket as one entire launch including launch time.
 # Online sources tell me launch time is ~41 seconds. So total time = 3s * 100 parts + 41s = 341s.
-# This will break once modules are taken into account.
-Rocket takes 341 in rocket silo, 1000 low density structure, 1000 rocket control unit, 1000 rocket fuel, can take productivity
+# We pass this in as "300 plus 41 delay", which tells the calculator that the 41 can't be sped up.
+Rocket takes 300 in rocket silo, 1000 low density structure, 1000 rocket control unit, 1000 rocket fuel, can take productivity, plus 41 delay, is virtual
+# Similarly, 1000 white science is not its own step, it's another kind of rocket launch.
+1000 white science takes 300 in rocket silo, 1000 low density structure, 1000 rocket control unit, 1000 rocket fuel, can take productivity, plus 41 delay, plus 1 satellite
 # For convenience, a wrapper that represents one unit of science at the 'infinite science' level,
 # ie. all kinds of science and 60s per pack.
-Infinite science takes 60 in lab, 1 red science, 1 green science, 1 black science, 1 blue science, 1 purple science, 1 yellow science, 1 white science, can take productivity
+Infinite science takes 60 in lab, 1 red science, 1 green science, 1 black science, 1 blue science, 1 purple science, 1 yellow science, 1 white science, can take productivity, is virtual
 
 # Oil recipes, the output items are dummy items resolved by solve_oil()
 # "Oil products" resolves to 10 heavy / 45 light / 55 petrol
@@ -73,9 +74,6 @@ Steel plate takes 16 in furnace, 5 iron plate, can take productivity
 2 black science takes 10 in assembler, 1 grenade, 1 piercing ammo, 2 wall, can take productivity
 3 purple science takes 21 in assembler, 1 electric furnace, 1 productivity module, 30 rail, can take productivity
 3 yellow science takes 21 in assembler, 1 robot frame, 3 low density structure, 2 blue circuit, can take productivity
-# We model white science as coming from a rocket + a sattelite. Since it has no actual 'build time'
-# we set it to a very low number so it will be pretty much always ignored.
-1000 white science takes 0.001 in launch, 1 rocket, 1 satellite
 
 # Logistics
 Wooden chest takes 0.5 in assembler, 2 wood
