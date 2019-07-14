@@ -84,12 +84,20 @@ class BeltManager(object):
 			"""
 			return (0 if is_liquid(item) else 1), -throughput, item
 
+		# NOTE: We avoid using y_slot 0 unless we absolutely need to.
+		# This is because pumps in the bus line encroach on y_slot 0.
+		# We can selectively not include pumps when they would conflict,
+		# but we don't want to do this too often as it risks liquid flow levels
+		# dropping too low. By only doing this when needed (7 total inputs+outputs),
+		# we mostly avoid it so it _should_ be fine.
+		y_slots = range(7)
+		if len(step.inputs()) + len(step.outputs()) <= 6:
+			y_slots = y_slots[1:]
+
 		# pick inputs
 		inputs = {}
 		inputs_in_order = sorted(step.inputs().items(), key=inout_order)
-		# highest throughput input goes in top y slot
-		# NOTE: We avoid using y_slot 0 as this is hard to fit into the available space
-		for y_slot, (input, throughput) in zip(range(1, 7), inputs_in_order):
+		for y_slot, (input, throughput) in zip(y_slots, inputs_in_order):
 			lines = self.find_lines(input, throughput)
 			# pick least loaded matching line first, falling back to rightmost.
 			line_num, line = min(lines, key=lambda (i, l): (l.throughput, -i))
@@ -100,9 +108,8 @@ class BeltManager(object):
 		# pick outputs
 		outputs = {}
 		# output slots count up from bottom, highest throughput at bottom
-		y_slots = range(7)[::-1]
 		outputs_in_order = sorted(step.outputs().items(), key=inout_order)
-		for y_slot, (output, throughput) in zip(y_slots, outputs_in_order):
+		for y_slot, (output, throughput) in zip(y_slots[::-1], outputs_in_order):
 			# for now, always allocate a new line for each output, we can compress later.
 			line_num = self.add_line(output, throughput)
 			outputs[line_num] = (output, y_slot)
@@ -110,7 +117,7 @@ class BeltManager(object):
 
 		assert not (set(inputs.values()) & set([
 			y_slot for output, y_slot in outputs.values()
-		])), "inputs and outputs overlap"
+		])), "inputs and outputs overlap:\ninputs: {}\noutputs: {}\nstep: {}".format(inputs, outputs, step)
 
 		placement = Placement(
 			bus = prev_bus,

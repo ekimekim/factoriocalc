@@ -177,6 +177,10 @@ def layout_bus(step, padding, process_base_x):
 	* Onramping outputs to the bus below
 	If Compaction:
 	* Performing compactions and shifts
+	Special case:
+		Because pipe underpasses with a pump encroach on y_slot 0,
+		we also get a list of "forbidden" bus indexes where pumps can't go,
+		because the inout on that row needed to put something there.
 	Returns layout.
 	"""
 	layout = Layout("bus")
@@ -184,6 +188,14 @@ def layout_bus(step, padding, process_base_x):
 	# infra column - roboport with big pole below it
 	layout.place(0, -3, primitives.roboport)
 	layout.place(2, 1, primitives.big_pole)
+
+	# input/output lines, or compaction lines
+	if isinstance(step, Placement):
+		in_outs, forbidden_pump_indexes = layout_in_outs(step, padding, process_base_x)
+		layout.place(0, 0, in_outs)
+	else:
+		layout.place(0, 0, layout_compaction(step))
+		forbidden_pump_indexes = []
 
 	# underpasses and power poles
 	if isinstance(step, Placement):
@@ -194,16 +206,17 @@ def layout_bus(step, padding, process_base_x):
 		bus_x = BUS_START_X + 2 * bus_pos
 		# unused lines get underpasses
 		if bus_pos not in used and line is not None:
-			primitive = primitives.underpass_pipe if is_liquid(line.item) else primitives.underpass_belt
+			if not is_liquid(line.item):
+				primitive = primitives.underpass_belt
+			elif bus_pos in forbidden_pump_indexes:
+				primitive = primitives.underpass_pipe_no_pump
+			else:
+				primitive = primitives.underpass_pipe
 			layout.place(bus_x, -2, primitive)
 		# used, unused or blank, doesn't matter. Every 4 lines + the last line gets a pole.
 		if bus_pos % 4 == 0 or bus_pos == len(step.bus) - 1:
 			layout.place(bus_x + 1, -2, primitives.medium_pole)
 
-	if isinstance(step, Placement):
-		layout.place(0, 0, layout_in_outs(step, padding, process_base_x))
-	else:
-		layout.place(0, 0, layout_compaction(step))
 	return layout
 
 
@@ -216,7 +229,8 @@ def layout_beacons(width):
 
 def layout_in_outs(step, padding, process_base_x):
 	"""Return the parts needed to connect inputs and outputs
-	from the bus to the process.
+	from the bus to the process. Also returns a list of bus indexes
+	which y_slot 0 is occupying, so that layout_bus() can avoid putting pumps there.
 	"""
 	# Each in-out has three parts:
 	# * The actual split or join component, which occupies
@@ -231,6 +245,7 @@ def layout_in_outs(step, padding, process_base_x):
 	# going to die if we encounter it and hope we don't.
 
 	layout = Layout("in-outs")
+	forbidden_pump_indexes = []
 
 	# Set up some vars for horiz_line
 	used = set(step.inputs.keys() + step.outputs.keys()) # bus indexes that have an on/off ramp
@@ -254,6 +269,8 @@ def layout_in_outs(step, padding, process_base_x):
 				if bus_index + delta not in used:
 					bus_index += delta
 					place_at_index(bus_index)
+					if y_slot == 0:
+						forbidden_pump_indexes.append(bus_index)
 					break
 			else:
 				raise ValueError((
@@ -324,7 +341,7 @@ def layout_in_outs(step, padding, process_base_x):
 		# place the surfacing in the padding area
 		layout.place(BUS_START_X + 2 * target_index, y_slot, surfacing(item, LEFT))
 
-	return layout
+	return layout, forbidden_pump_indexes
 
 
 def layout_compaction(step):

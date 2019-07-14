@@ -71,6 +71,12 @@ underpass_pipe = Layout('underpass pipe',
 	(0, 9, entity(E.underground_pipe, DOWN)),
 )
 
+# A bus pipe without a pump, which may not fit in some special cases
+underpass_pipe_no_pump = Layout('underpass pipe no pump',
+	(0, 0, entity(E.underground_pipe, UP)),
+	(0, 9, entity(E.underground_pipe, DOWN)),
+)
+
 # A bus underground belt going under the working area
 underpass_belt = Layout('underpass belt',
 	(0, 0, belt_to_ground(DOWN)),
