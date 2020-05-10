@@ -80,7 +80,7 @@ from .util import is_liquid, UP, RIGHT, DOWN, LEFT, Layout, line_limit
 BUS_START_X = 4
 
 
-def layout(steps, final_bus):
+def layout(beacon_module, steps, final_bus):
 	"""Converts a list of Placements and Compactions into
 	a collection of Primitives."""
 	# Our main concerns in this top-level function are intra-row details:
@@ -102,7 +102,7 @@ def layout(steps, final_bus):
 			assert steps_since_roboports == ROWS_PER_ROBOPORT_AREA
 			# add beacons for bottom of row above if needed
 			if prev_beacon_start is not None:
-				layout.place(prev_beacon_start, base_y - 3, layout_beacons(prev_beacon_end - prev_beacon_start))
+				layout.place(prev_beacon_start, base_y - 3, layout_beacons(beacon_module, prev_beacon_end - prev_beacon_start))
 			# mark down where this roboport row will go for later, along with the relevant bus
 			roboport_rows.append((step.bus, base_y))
 			# adjust state for upcoming step
@@ -116,7 +116,7 @@ def layout(steps, final_bus):
 		# add beacon row above this step
 		row_start = min(beacon_start, prev_beacon_start) if prev_beacon_start is not None else beacon_start
 		row_end = max(beacon_end, prev_beacon_end)
-		layout.place(row_start, base_y - 3, layout_beacons(row_end - row_start))
+		layout.place(row_start, base_y - 3, layout_beacons(beacon_module, row_end - row_start))
 		# advance state
 		prev_beacon_start = beacon_start
 		prev_beacon_end = beacon_end
@@ -127,7 +127,7 @@ def layout(steps, final_bus):
 
 	# final beacon row, unless we ended in something weird (eg. roboport row)
 	if prev_beacon_start is not None:
-		layout.place(prev_beacon_start, base_y - 3, layout_beacons(prev_beacon_end - prev_beacon_start))
+		layout.place(prev_beacon_start, base_y - 3, layout_beacons(beacon_module, prev_beacon_end - prev_beacon_start))
 	# check if we need a final row of roboports so that last row is in range
 	if steps_since_roboports > ROWS_PER_ROBOPORT_AREA / 2:
 		roboport_rows.append((final_bus, base_y))
@@ -221,10 +221,10 @@ def layout_bus(step, padding, process_base_x):
 	return layout
 
 
-def layout_beacons(width):
+def layout_beacons(beacon_module, width):
 	layout = Layout("beacons")
 	for x in range(int(math.ceil(width / 3.))):
-		layout.place(3*x, 0, primitives.beacon)
+		layout.place(3*x, 0, primitives.beacon(beacon_module))
 	return layout
 
 

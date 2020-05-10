@@ -25,12 +25,12 @@ def comma_sep(arg):
 
 @arg('-s', '--stop-items', type=comma_sep)
 @arg('-m', '--modules', type=comma_sep)
-@arg('-b', '--beacon-speed', help="Speed bonus from one beacon")
+@arg('-b', '--beacon-module-level')
 def main(items,
 	data_path='./factorio_recipes',
 	stop_items='',
 	modules='',
-	beacon_speed=0.5,
+	beacon_module_level=3,
 	show_conflicts=False,
 	verbose=False,
 ):
@@ -48,6 +48,8 @@ def main(items,
 	items = _items
 
 	datafile = Datafile(data_path)
+	beacon_module = datafile.modules["speed {}".format(beacon_module_level)]
+	beacon_speed = beacon_module.speed # 2 modules in beacon, but each only has 50% effect
 	calculator = Calculator(
 		datafile,
 		stop_items,
@@ -92,7 +94,7 @@ def main(items,
 	v("Bus: {}".format(format_bus(manager.bus)))
 
 	v("=== Layouter stage ===")
-	l = layout(manager.output, manager.bus)
+	l = layout(beacon_module.name, manager.output, manager.bus)
 	v(l)
 
 	v("=== Flattener stage ===")

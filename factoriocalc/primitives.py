@@ -47,7 +47,9 @@ class _Entities(object):
 	splitter = 'express-splitter'
 	roboport = 'roboport'
 	furnace = 'electric-furnace'
-	speed_module = 'speed-module-3'
+	speed_1 = 'speed-module'
+	speed_3 = 'speed-module-3'
+	speed_module = speed_3
 	prod_1 = 'productivity-module'
 	prod_3 = 'productivity-module-3'
 	prod_module = prod_3
@@ -343,5 +345,5 @@ compact_pipe = Layout('compact pipe',
 # Single-entity primitives, used directly for simple or fiddly bits in layouter
 medium_pole = entity(E.medium_pole)
 big_pole = entity(E.big_pole)
-beacon = entity(E.beacon, items={E.speed_module: 2})
+beacon = lambda module: entity(E.beacon, items={E[module]: 2})
 roboport = entity(E.roboport)
