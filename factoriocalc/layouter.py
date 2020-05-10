@@ -448,27 +448,30 @@ def layout_roboport_row(bus, width):
 	CONSTRUCT_AREA = 110
 
 	# Main roboport area. Put a roboport (and accompanying power) every LOGISTIC_AREA,
-	# starting at LOGISTIC_AREA/2 so it links with infra column roboports above and below.
+	# starting at LOGISTIC_AREA so it links with infra column roboports above and below.
 	# Since power poles only reach 30 tiles and logistic area is 50 tiles, put a large power pole
 	# between each.
 
-	# First roboport is placed at LOGISTIC_AREA/2, and so covers construction out to:
-	#	LOGISTIC_AREA/2 + CONSTRUCT_AREA/2
+	# First roboport is placed at LOGISTIC_AREA, and so covers construction out to:
+	#	LOGISTIC_AREA + CONSTRUCT_AREA/2
 	# Each extra roboport adds LOGISTIC_AREA to the total reach, so final reach is:
-	#	reach = LOGISTIC_AREA/2 + CONSTRUCT_AREA/2 + (num_roboports - 1) * LOGISTIC_AREA
+	#	reach = CONSTRUCT_AREA/2 + num_roboports * LOGISTIC_AREA
 	# Rearranging to calculate required roboports:
-	#	num_roboports = 1 + (reach - LOGISTIC_AREA/2 - CONSTRUCT_AREA/2) / LOGISTIC_AREA
+	#	num_roboports = (reach - CONSTRUCT_AREA/2) / LOGISTIC_AREA
 	# Then we take ceil of that since we need an integer.
-	num_roboports = max(1, int(math.ceil(
-		1 + Fraction(width - LOGISTIC_AREA/2 - CONSTRUCT_AREA/2) / LOGISTIC_AREA
-	)))
+	# Note that if our reach is sufficiently small (less than CONSTRUCT_AREA/2)
+	# we don't need any roboports at all!
+	# XXX Future work: In this case we should just omit the roboport row entirely.
+	num_roboports = int(math.ceil(
+		Fraction(width - CONSTRUCT_AREA/2) / LOGISTIC_AREA
+	))
 
 	for i in range(num_roboports):
 		# note x pos is the pos we said above, but -2 because that's measuring from the center,
 		# not the top-left.
-		x_pos = LOGISTIC_AREA/2 - 2 + i * LOGISTIC_AREA
-		# place left-most pole at 2 to align with other rows
-		pole_x_pos = max(2, x_pos - LOGISTIC_AREA/2)
+		x_pos = (i+1) * LOGISTIC_AREA - 2
+		# place pole between this and previous roboport (or between first roboport and infra column)
+		pole_x_pos = x_pos - LOGISTIC_AREA/2
 		layout.place(pole_x_pos, 0, primitives.big_pole)
 		layout.place(x_pos, 0, primitives.roboport)
 		# power pole for roboport, on its left
