@@ -31,6 +31,7 @@ def entity(name, orientation=None, **attrs):
 # A mapping from easy internal names to official names
 class _Entities(object):
 	# guessed
+	radar = 'radar'
 
 	# checked
 	underground_pipe = 'pipe-to-ground'
@@ -347,3 +348,4 @@ medium_pole = entity(E.medium_pole)
 big_pole = entity(E.big_pole)
 beacon = lambda module: entity(E.beacon, items={E[module]: 2})
 roboport = entity(E.roboport)
+radar = entity(E.radar)

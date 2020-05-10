@@ -22,6 +22,7 @@ entity_sizes = {
 	E.pump: (1, 2),
 	E.big_pole: x2,
 	E.beacon: x3,
+	E.radar: x3,
 	E.assembler: x3,
 	E.splitter: (2, 1),
 	E.roboport: x4,

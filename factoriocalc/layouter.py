@@ -447,7 +447,7 @@ def layout_roboport_row(bus, width):
 	LOGISTIC_AREA = 50
 	CONSTRUCT_AREA = 110
 
-	# Main roboport area. Put a roboport (and accompanying power) every LOGISTIC_AREA,
+	# Main roboport area. Put a roboport and radar (and accompanying power) every LOGISTIC_AREA,
 	# starting at LOGISTIC_AREA so it links with infra column roboports above and below.
 	# Since power poles only reach 30 tiles and logistic area is 50 tiles, put a large power pole
 	# between each.
@@ -459,8 +459,7 @@ def layout_roboport_row(bus, width):
 	# Rearranging to calculate required roboports:
 	#	num_roboports = (reach - CONSTRUCT_AREA/2) / LOGISTIC_AREA
 	# Then we take ceil of that since we need an integer.
-	# Note that if our reach is sufficiently small (less than CONSTRUCT_AREA/2)
-	# we don't need any roboports at all!
+	# We always need at least 1 to ensure radar coverage.
 	# XXX Future work: In this case we should just omit the roboport row entirely.
 	num_roboports = int(math.ceil(
 		Fraction(width - CONSTRUCT_AREA/2) / LOGISTIC_AREA
@@ -476,5 +475,7 @@ def layout_roboport_row(bus, width):
 		layout.place(x_pos, 0, primitives.roboport)
 		# power pole for roboport, on its left
 		layout.place(x_pos - 2, 0, primitives.big_pole)
+		# and the radar to the power pole's left
+		layout.place(x_pos - 5, 0, primitives.radar)
 
 	return layout

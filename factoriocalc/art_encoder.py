@@ -81,6 +81,7 @@ class ArtEncoder(object):
 		E.big_pole: [['\\', '/'], ['/', '\\']],
 		E.beacon: boxed('B'),
 		E.roboport: boxed('R', n=4),
+		E.radar: white(boxed("R")),
 		E.pipe: green([['=']]),
 		E.underground_pipe: lambda obj: green([[
 			{
