@@ -1,6 +1,8 @@
 
 from fractions import Fraction
 
+from argh import arg
+
 from .datafile import Datafile
 from .calculator import Calculator, split_into_steps
 from .beltmanager import BeltManager, Placement, Compaction
@@ -17,7 +19,21 @@ def format_bus(bus):
 	)
 
 
-def main(items, data_path='./factorio_recipes', stop_items='', show_conflicts=False, verbose=False):
+def comma_sep(arg):
+	return [part.lower() for part in arg.split(',')]
+
+
+@arg('-s', '--stop-items', type=comma_sep)
+@arg('-m', '--modules', type=comma_sep)
+@arg('-b', '--beacon-speed', help="Speed bonus from one beacon")
+def main(items,
+	data_path='./factorio_recipes',
+	stop_items='',
+	modules='',
+	beacon_speed=0.5,
+	show_conflicts=False,
+	verbose=False,
+):
 	def v(s):
 		if verbose:
 			print s
@@ -31,15 +47,13 @@ def main(items, data_path='./factorio_recipes', stop_items='', show_conflicts=Fa
 			_items[name] = throughput
 	items = _items
 
-	if stop_items:
-		stop_items = [name.lower() for name in stop_items.split(',')]
-
 	datafile = Datafile(data_path)
 	calculator = Calculator(
 		datafile,
 		stop_items,
-		beacon_speed=4, # double-row of beacons
-		oil_beacon_speed=6, # double-row of beacons
+		module_priorities=modules if modules else Calculator.DEFAULT_MODS,
+		beacon_speed=8*beacon_speed, # double-row of beacons
+		oil_beacon_speed=12*beacon_speed, # double-row of beacons
 	)
 
 	v("=== Calculator stage ===")
