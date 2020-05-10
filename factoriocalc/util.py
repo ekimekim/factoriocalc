@@ -37,9 +37,13 @@ class Layout(object):
 				entities.append((Point(pos.x + subpos.x, pos.y + subpos.y), entity))
 		return entities
 
+	def total_entities(self):
+		"""For debugging, total entities in this and all sub-layouts"""
+		return len(self.entities) + sum(sublayout.total_entities() for pos, sublayout in self.sublayouts)
+
 	def __str__(self):
 		"""Produces a long-form description suitable for debugging"""
-		return "{}: {} entities{}".format(self.name, len(self.entities), ''.join(
+		return "{}: {}/{} entities{}".format(self.name, len(self.entities), self.total_entities(), ''.join(
 			"\n" + "\n".join("  {}".format(line) for line in str(sublayout).split('\n'))
 			for pos, sublayout in self.sublayouts
 		))
