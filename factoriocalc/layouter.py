@@ -1,5 +1,6 @@
 
 import math
+from fractions import Fraction
 
 from . import primitives
 from .beltmanager import Placement
@@ -454,12 +455,12 @@ def layout_roboport_row(bus, width):
 	# First roboport is placed at LOGISTIC_AREA/2, and so covers construction out to:
 	#	LOGISTIC_AREA/2 + CONSTRUCT_AREA/2
 	# Each extra roboport adds LOGISTIC_AREA to the total reach, so final reach is:
-	#	reach = LOGISTIC_AREA/2 + CONSTRUCT_AREA/2 + num_roboports * LOGISTIC_AREA
+	#	reach = LOGISTIC_AREA/2 + CONSTRUCT_AREA/2 + (num_roboports - 1) * LOGISTIC_AREA
 	# Rearranging to calculate required roboports:
-	#	num_roboports = (reach - LOGISTIC_AREA/2 - CONSTRUCT_AREA/2) / LOGISTIC_AREA
+	#	num_roboports = 1 + (reach - LOGISTIC_AREA/2 - CONSTRUCT_AREA/2) / LOGISTIC_AREA
 	# Then we take ceil of that since we need an integer.
 	num_roboports = max(1, int(math.ceil(
-		(width - LOGISTIC_AREA/2 - CONSTRUCT_AREA/2) / LOGISTIC_AREA
+		1 + Fraction(width - LOGISTIC_AREA/2 - CONSTRUCT_AREA/2) / LOGISTIC_AREA
 	)))
 
 	for i in range(num_roboports):
