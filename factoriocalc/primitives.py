@@ -48,10 +48,14 @@ class _Entities(object):
 	roboport = 'roboport'
 	furnace = 'electric-furnace'
 	speed_module = 'speed-module-3'
-	prod_module = 'productivity-module-3'
-	prod_3 = prod_module
+	prod_1 = 'productivity-module'
+	prod_3 = 'productivity-module-3'
+	prod_module = prod_3
 	gear = 'iron-gear-wheel'
 	refinery = 'oil-refinery'
+	copper_wire = 'copper-cable'
+	green_circuit = 'electronic-circuit'
+	red_circuit = 'advanced-circuit'
 	# not entities but still a recipe name
 	oil_products = 'advanced-oil-processing'
 
