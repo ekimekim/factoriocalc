@@ -75,6 +75,7 @@ class ArtEncoder(object):
 				3: '⊃',
 			}[(obj.orientation + (2 if obj.attrs['type'] == 'input' else 0)) % 4]
 		]]),
+		E.red_underground_belt: lambda obj: red(ArtEncoder.ART[E.underground_belt](obj)),
 		E.splitter: splitter,
 		E.medium_pole: [['o']],
 		E.big_pole: [['\\', '/'], ['/', '\\']],

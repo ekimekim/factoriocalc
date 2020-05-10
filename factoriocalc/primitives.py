@@ -38,6 +38,7 @@ class _Entities(object):
 	pump = 'pump'
 	belt = 'express-transport-belt'
 	underground_belt = 'express-underground-belt'
+	red_underground_belt = 'fast-underground-belt'
 	medium_pole = 'medium-electric-pole'
 	big_pole = 'big-electric-pole'
 	beacon = 'beacon'
@@ -60,8 +61,14 @@ class _Entities(object):
 E = _Entities()
 
 
-belt_to_ground = lambda o: entity(E.underground_belt, o, type='input')
-belt_from_ground = lambda o: entity(E.underground_belt, o, type='output')
+def _underground_belt(orientation, io, color):
+	e = {
+		'blue': E.underground_belt,
+		'red': E.red_underground_belt,
+	}[color]
+	return entity(e, orientation, type=io)
+belt_to_ground = lambda o, type='blue': _underground_belt(o, 'input', type)
+belt_from_ground = lambda o, type='blue': _underground_belt(o, 'output', type)
 
 
 # Primitives, which are Layouts or Entities.
@@ -102,7 +109,7 @@ roboport_underpass_belt = Layout('roboport underpass belt',
 
 
 # Run a length of belt in the specified direction for specified length.
-def belt(orientation, length):
+def belt(orientation, length=1):
 	delta = orientation_to_vector(orientation)
 	return Layout("belt", *[
 		(i * delta.x, i * delta.y, entity(E.belt, orientation))

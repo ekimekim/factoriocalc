@@ -234,8 +234,6 @@ pole_tail = Layout('pole tail',
 # * assembler:
 #     1/1/1 -> 0/0/1
 #     0/0/6 -> 0/0/1 (eg. satellte)
-#     0/0/3 -> 0/1/0
-#     0/2/1 -> 0/0/1
 
 # Simple processor for basic 1 -> 1 belt recipes, eg. all smelting, iron gears.
 # Can support any of the 3x3 building types (furnaces, assemblers, chemical plants).
@@ -398,6 +396,195 @@ Processor('oil refining',
 		(9, 3, entity('pipe', UP)),
 		(9, 6, entity('pipe-to-ground', LEFT)),
 	),
+	tail_width=3,
+	tail=pole_tail,
+)
+
+
+# Assemblers, 2 full + 1 half belt in, 1 half belt out
+# This supports various recipes, including some that don't make full use of all 3 belts
+# (eg. this can be used for any 2-belt recipe).
+# We pack one full and one half belt into the space of one belt by mixing red and blue
+# underground belts. A full red belt (30 items/sec) can safely carry a half-belt (22.5 items/sec).
+# This means we need to balance the output red line periodically. To make this work
+# requires a 4-assembler body pattern to alternate power poles and rebalancing.
+# In the diagram below, we use the normal indicators ∪⊂∩⊃ for underground belt,
+# but "crude" indicators ucnↄ for red underground belt.
+#  o>ↄ>|⊃ cↄ ⊂⊃ cↄ ⊂|
+#  ⊃^⊂^|i iioii iioi| o
+#  ⊃^⊂v|┌─┐┌─┐┌─┐┌─┐|
+#  >^ v|│A││A││A││A│|
+#    ov|└─┘└─┘└─┘└─┘|
+#     v|iivSiiioiioi| o
+#  ↄ  >|⊃c<sↄ⊂⊃c<<ↄ⊂|
+Processor('2 + half -> half',
+	building='assembler',
+	inputs=(0, 2, 1),
+	outputs=(0, 0, 1),
+	per_body_buildings=4,
+	# head: Run the two high-throughput belts into the starting points,
+	# run the third to the top then down into a red underground.
+	# In order to power top beacons, need a pole in the upper left.
+	# In order to power first body's left side inserters, the pole covering
+	# the bottom beacons is almost halfway up.
+	head_width=4,
+	head=Layout('head',
+		# poles
+		(0, 0, primitives.medium_pole),
+		(2, 4, primitives.medium_pole),
+		# first input
+		(0, 1, primitives.belt_to_ground(RIGHT)),
+		(2, 1, primitives.belt_from_ground(RIGHT)),
+		(3, 1, primitives.belt(UP)),
+		(3, 0, primitives.belt(RIGHT)),
+		# second input
+		(0, 2, primitives.belt_to_ground(RIGHT)),
+		(2, 2, primitives.belt_from_ground(RIGHT)),
+		(3, 2, primitives.belt(DOWN, 4)),
+		(3, 6, primitives.belt(RIGHT)),
+		# third input
+		(0, 3, primitives.belt(RIGHT)),
+		(1, 3, primitives.belt(UP, 3)),
+		(1, 0, primitives.belt(RIGHT)),
+		(2, 0, primitives.belt_to_ground(RIGHT, type='red')),
+		# output
+		(0, 6, primitives.belt_from_ground(LEFT, type='red')),
+	),
+	# body: Alternate the two underground belt types so we can insert to/from both.
+	# We need to re-balance the red belt since we need to use both sides.
+	# However, this leaves no room for power poles. We can just manage to reach all inserters
+	# by putting power poles on every second pair of assemblers.
+	body_width=12,
+	body=lambda building: Layout('body',
+		# assemblers
+		(0, 2, building),
+		(3, 2, building),
+		(6, 2, building),
+		(9, 2, building),
+		# poles and inserters, top line
+		(0, 1, entity(E.inserter, UP)),
+		(2, 1, entity(E.inserter, UP)),
+		(3, 1, entity(E.inserter, UP)),
+		(4, 1, primitives.medium_pole),
+		(5, 1, entity(E.inserter, UP)),
+		(6, 1, entity(E.inserter, UP)),
+		(8, 1, entity(E.inserter, UP)),
+		(9, 1, entity(E.inserter, UP)),
+		(10, 1, primitives.medium_pole),
+		(11, 1, entity(E.inserter, UP)),
+		# poles and inserters, bottom line
+		(0, 5, entity(E.inserter, DOWN)),
+		(1, 5, entity(E.inserter, UP)),
+		(4, 5, entity(E.inserter, UP)),
+		(5, 5, entity(E.inserter, DOWN)),
+		(6, 5, entity(E.inserter, DOWN)),
+		(7, 5, primitives.medium_pole),
+		(8, 5, entity(E.inserter, UP)),
+		(9, 5, entity(E.inserter, UP)),
+		(10, 5, primitives.medium_pole),
+		(11, 5, entity(E.inserter, DOWN)),
+		# First input
+		(0, 0, primitives.belt_to_ground(RIGHT)),
+		(5, 0, primitives.belt_from_ground(RIGHT)),
+		(6, 0, primitives.belt_to_ground(RIGHT)),
+		(11, 0, primitives.belt_from_ground(RIGHT)),
+		# Second input
+		(0, 6, primitives.belt_to_ground(RIGHT)),
+		(5, 6, primitives.belt_from_ground(RIGHT)),
+		(6, 6, primitives.belt_to_ground(RIGHT)),
+		(11, 6, primitives.belt_from_ground(RIGHT)),
+		# Third input
+		(2, 0, primitives.belt_from_ground(RIGHT, type='red')),
+		(3, 0, primitives.belt_to_ground(RIGHT, type='red')),
+		(8, 0, primitives.belt_from_ground(RIGHT, type='red')),
+		(9, 0, primitives.belt_to_ground(RIGHT, type='red')),
+		# Output
+		(10, 6, primitives.belt_from_ground(LEFT, type='red')),
+		(9, 6, primitives.belt(LEFT, 2)),
+		(7, 6, primitives.belt_to_ground(LEFT, type='red')),
+		(4, 6, primitives.belt_from_ground(LEFT, type='red')),
+		(3, 5, entity(E.splitter, LEFT, output_priority='right')),
+		(2, 5, primitives.belt(DOWN)),
+		(2, 6, primitives.belt(LEFT)),
+		(1, 6, primitives.belt_to_ground(LEFT, type='red')),
+	),
+	# note tail goes a bit wider than the last thing put down, so that there's enough beacons
+	tail_width=3,
+	tail=pole_tail,
+)
+
+
+# Assemblers, 3 half belt in, 1 full belt out
+# This supports a bunch of recipes with large amounts of output compared to their input,
+# even if they don't use all three belts.
+# We pack one blue belt (two halves) and one red belt (one half) into one line
+# by mixing red and blue underground belts.
+# In the diagram below, we use the normal indicators ∪⊂∩⊃ for underground belt,
+# but "crude" indicators ucnↄ for red underground belt.
+#  >ↄ>>|⊃ cↄ ⊂|
+#  ^>^o|i iioi| o
+#  >^< |┌─┐┌─┐|
+#  >>^ |│A││A│|
+#      |└─┘└─┘|
+#     o|i vSoi| o
+#  <<<<|<<<s<<|
+Processor('3x half -> full',
+	building='assembler',
+	inputs=(0, 0, 3),
+	outputs=(0, 1, 0),
+	per_body_buildings=2,
+	# head: Run the highest throughput one onto the red underground
+	# (which one doesn't matter, but we pick the highest throughput one
+	# on the off chance the inserter becomes a bottleneck, since it only needs)
+	# to insert one input instead of 2). Put the other two together.
+	head_width=4,
+	head=Layout('head',
+		# poles
+		(3, 1, primitives.medium_pole),
+		(3, 5, primitives.medium_pole),
+		# first input
+		(0, 1, primitives.belt(UP)),
+		(0, 0, primitives.belt(RIGHT)),
+		(1, 0, primitives.belt_to_ground(RIGHT, type='red')),
+		# second input + combined second and third
+		(0, 2, primitives.belt(RIGHT)),
+		(1, 2, primitives.belt(UP)), # third joins
+		(1, 1, primitives.belt(RIGHT)),
+		(2, 1, primitives.belt(UP)),
+		(2, 0, primitives.belt(RIGHT, 2)),
+		# output
+		(3, 6, primitives.belt(LEFT, 4)),
+	),
+	# body: Alternate the two underground belt types so we can insert to/from both.
+	# Rebalance the output each step.
+	body_width=6,
+	body=lambda building: Layout('body',
+		# assemblers
+		(0, 2, building),
+		(3, 2, building),
+		# poles
+		(4, 1, primitives.medium_pole),
+		(4, 5, primitives.medium_pole),
+		# inserters
+		(0, 1, entity(E.inserter, UP)),
+		(2, 1, entity(E.inserter, UP)),
+		(3, 1, entity(E.inserter, UP)),
+		(5, 1, entity(E.inserter, UP)),
+		(0, 5, entity(E.inserter, UP)),
+		(5, 5, entity(E.inserter, UP)),
+		# first input
+		(2, 0, primitives.belt_from_ground(RIGHT, type='red')),
+		(3, 0, primitives.belt_to_ground(RIGHT, type='red')),
+		# combined second and third inputs
+		(0, 0, primitives.belt_to_ground(RIGHT)),
+		(5, 0, primitives.belt_from_ground(RIGHT)),
+		# output
+		(5, 6, primitives.belt(LEFT, 2)),
+		(3, 5, entity(E.splitter, LEFT, output_priority='right')),
+		(2, 5, primitives.belt(DOWN)),
+		(2, 6, primitives.belt(LEFT, 3)),
+	),
+	# note tail goes a bit wider than the last thing put down, so that there's enough beacons
 	tail_width=3,
 	tail=pole_tail,
 )
