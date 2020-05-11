@@ -227,8 +227,6 @@ pole_tail = Layout('pole tail',
 # * rocket silo 0/0/4 -> 0/0/1
 # * lab 0/0/7 -> 0/0/0
 # * chemical plant:
-#     2/0/0 -> 1/0/0 (eg. cracking)
-#     2/0/0 -> 0/0/1 (eg. sulfur)
 #     1/0/2 -> 1/0/0 (eg. sulfuric acid)
 #     1/0/2 -> 0/1/0 (eg. battery)
 # * assembler:
@@ -585,6 +583,123 @@ Processor('3x half -> full',
 		(2, 6, primitives.belt(LEFT, 3)),
 	),
 	# note tail goes a bit wider than the last thing put down, so that there's enough beacons
+	tail_width=3,
+	tail=pole_tail,
+)
+
+
+# Processor for oil cracking, identified as 2 liquids -> 1 liquid.
+# Note there's a narrowly avoided issue here with inputs. In heavy oil cracking,
+# there is more heavy oil than water (40 vs 30). But in light oil cracking, they
+# are even (30 vs 30). This means that the first input is the oil (which needs to
+# go on the top left input for the chemical plant) for heavy, but for light it depends
+# on the names. Thankfully light oil sorts before water, so the oil is again in the first input.
+# Our second problem is that with no room to run vertical underground pipes, we can't have
+# inputs next to each other (as the pipes would mix). This means we need at least 1 gap between
+# each plant. But that doesn't tesselate because then 1 in 3 plants would line up with the becaons
+# and only be covered by 6 instead of 8. We solve this by making a 2-wide gap every second plant,
+# so we have 2 plants in 9 spaces instead of 2 plants in 8 spaces.
+# Due to this large gap at the end, the tail doesn't need to be full width.
+#  ===⊃| ⊂=⊃ ⊂=⊃ |
+#  =  =|=⊃=⊂=⊃=⊂=| o
+#  ⊃o⊂=|┌─┐o┌─┐  |
+#      |│C│ │C│  |
+#   o  |└─┘o└─┘  |
+#     =|=⊃ ⊂=⊃  ⊂| o
+#  ⊃ ⊂=|         |
+Processor('oil cracking',
+	building='chemical plant',
+	inputs=(2, 0, 0),
+	outputs=(1, 0, 0),
+	base_buildings=0,
+	per_body_buildings=2,
+	head_width=4,
+	head=Layout('head',
+		# poles
+		(1, 2, primitives.medium_pole),
+		(1, 4, primitives.medium_pole),
+		# first input
+		(0, 1, entity(E.pipe)),
+		(0, 0, primitives.pipe(RIGHT, 3)),
+		(3, 0, entity(E.underground_pipe, LEFT)),
+		# second input
+		(0, 2, entity(E.underground_pipe, LEFT)),
+		(2, 2, entity(E.underground_pipe, RIGHT)),
+		(3, 2, primitives.pipe(UP, 2)),
+		# output
+		(3, 5, primitives.pipe(DOWN, 2)),
+		(2, 6, entity(E.underground_pipe, RIGHT)),
+		(0, 6, entity(E.underground_pipe, LEFT)),
+	),
+	body_width=9,
+	body=lambda building: Layout('body',
+		# buildings and poles
+		(0, 2, building),
+		(3, 2, primitives.medium_pole),
+		(3, 4, primitives.medium_pole),
+		(4, 2, building),
+		# first input
+		(1, 0, entity(E.underground_pipe, RIGHT)),
+		(2, 0, entity(E.pipe)),
+		(2, 1, entity(E.pipe)),
+		(3, 0, entity(E.underground_pipe, LEFT)),
+		(5, 0, entity(E.underground_pipe, RIGHT)),
+		(6, 0, entity(E.pipe)),
+		(6, 1, entity(E.pipe)),
+		(7, 0, entity(E.underground_pipe, LEFT)),
+		# second input
+		(0, 1, entity(E.pipe)),
+		(1, 1, entity(E.underground_pipe, LEFT)),
+		(3, 1, entity(E.underground_pipe, RIGHT)),
+		(4, 1, entity(E.pipe)),
+		(5, 1, entity(E.underground_pipe, LEFT)),
+		(7, 1, entity(E.underground_pipe, RIGHT)),
+		(8, 1, entity(E.pipe)),
+		# output
+		(8, 5, entity(E.underground_pipe, RIGHT)),
+		(5, 5, entity(E.underground_pipe, LEFT)),
+		(4, 5, entity(E.pipe)),
+		(3, 5, entity(E.underground_pipe, RIGHT)),
+		(1, 5, entity(E.underground_pipe, LEFT)),
+		(0, 5, entity(E.pipe)),
+	),
+	# Tail doesn't need to add more beacons, just power the last one.
+	tail_width=2,
+	tail=pole_tail,
+)
+
+
+# Processor for 2 liquids -> 1 solid, eg. sulfur.
+# Again, we hit issues with equal throughput liquid inputs, but again we know water sorts last.
+# To avoid having two liquid inputs side by side, every second plant is flipped. We also avoid
+# needing to rebalance the output lines by having half the plants output to the top vs the bottom,
+# then join the two half-lines at the end.
+# The head only barly fits in 4 width. It only works because the top belt's items are on the
+# right side, so it can put onto the bottom belt even when going head-first into an underground
+# belt. Also, the first body's poles cover the head area's beacons.
+# In the diagram below, we use Ɔ (an upside down C) to indiciate an upside down chemical plant.
+# We also distinguish between pipe and belt undergrounds by using ucnↄ for belts.
+#  =⊃vↄ|o⊂=⊃cↄ|
+#  ==u=|=⊃= i⊂| o
+#  ⊃=⊂=|┌─┐┌─┐|
+#  ==n∪|│C││Ɔ│|
+#  =ov |└─┘└─┘|
+#  =⊃v∩|oi⊂=⊃=| o
+#  <<⊃=|⊃cↄ ⊂=|
+Processor('2 fluids to belt',
+	building='chemical plant',
+	inputs=(2, 0, 0),
+	outputs=(0, 1, 0),
+	base_buildings=0,
+	per_body_buildings=2,
+	head_width=4,
+	head=Layout('head',
+		# TODO
+	),
+	body_width=6,
+	body=lambda building: Layout('body',
+		# TODO
+	),
 	tail_width=3,
 	tail=pole_tail,
 )

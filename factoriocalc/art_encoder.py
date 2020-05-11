@@ -58,6 +58,7 @@ class ArtEncoder(object):
 		E.inserter: green([['i']]),
 		E.assembler: yellow(boxed("A")),
 		E.furnace: blue(boxed("F")),
+		E.chemical_plant: blue(boxed("C")),
 		E.refinery: green(boxed("R", n=5)), # oil drum
 		E.belt: lambda obj: blue([[
 			{

@@ -48,6 +48,7 @@ class _Entities(object):
 	splitter = 'express-splitter'
 	roboport = 'roboport'
 	furnace = 'electric-furnace'
+	chemical_plant = 'chemical-plant'
 	speed_1 = 'speed-module'
 	speed_3 = 'speed-module-3'
 	speed_module = speed_3
@@ -125,7 +126,7 @@ def belt(orientation, length=1):
 
 
 # As belt(), but for pipes
-def pipe(orientation, length):
+def pipe(orientation, length=1):
 	delta = orientation_to_vector(orientation)
 	return Layout("pipe", *[
 		(i * delta.x, i * delta.y, entity(E.pipe))
