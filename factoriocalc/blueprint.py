@@ -24,6 +24,7 @@ entity_sizes = {
 	E.beacon: x3,
 	E.radar: x3,
 	E.assembler: x3,
+	E.chemical_plant: x3,
 	E.splitter: (2, 1),
 	E.roboport: x4,
 	E.furnace: x3,
