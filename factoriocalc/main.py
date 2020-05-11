@@ -28,8 +28,8 @@ def comma_sep(arg):
 @arg('-b', '--beacon-module-level')
 def main(items,
 	data_path='./factorio_recipes',
-	stop_items='',
-	modules='',
+	stop_items=[],
+	modules=[],
 	beacon_module_level=3,
 	show_conflicts=False,
 	verbose=False,
