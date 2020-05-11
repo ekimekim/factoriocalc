@@ -682,9 +682,9 @@ Processor('oil cracking',
 #  =⊃vↄ|o⊂=⊃cↄ|
 #  ==u=|=⊃= i⊂| o
 #  ⊃=⊂=|┌─┐┌─┐|
-#  ==n∪|│C││Ɔ│|
-#  =ov |└─┘└─┘|
-#  =⊃v∩|oi⊂=⊃=| o
+#  == ∪|│C││Ɔ│|
+#  =o  |└─┘└─┘|
+#  =⊃n∩|oi⊂=⊃=| o
 #  <<⊃=|⊃cↄ ⊂=|
 Processor('2 fluids to belt',
 	building='chemical plant',
@@ -694,11 +694,65 @@ Processor('2 fluids to belt',
 	per_body_buildings=2,
 	head_width=4,
 	head=Layout('head',
-		# TODO
+		# Pole
+		(1, 4, primitives.medium_pole),
+		# First input, upper side
+		(0, 1, primitives.pipe(UP, 2)),
+		(1, 0, entity(E.underground_pipe, LEFT)),
+		# lower side
+		(1, 1, primitives.pipe(DOWN, 3)),
+		(0, 3, primitives.pipe(DOWN, 3)),
+		(1, 5, entity(E.underground_pipe, LEFT)),
+		# Second input, upper side
+		(0, 2, entity(E.underground_pipe, LEFT)),
+		(2, 2, entity(E.underground_pipe, RIGHT)),
+		(3, 2, primitives.pipe(UP, 2)),
+		# lower side
+		(3, 3, entity(E.underground_pipe, UP)),
+		(3, 5, entity(E.underground_pipe, DOWN)),
+		(3, 6, entity(E.pipe)),
+		# Output, upper side
+		(3, 0, primitives.belt_from_ground(LEFT)),
+		(2, 0, primitives.belt(DOWN)),
+		(2, 1, primitives.belt_to_ground(DOWN)),
+		(2, 5, primitives.belt_from_ground(DOWN)),
+		# lower side
+		(2, 6, primitives.belt_from_ground(LEFT)),
+		(1, 6, primitives.belt(LEFT, 2)),
 	),
 	body_width=6,
 	body=lambda building: Layout('body',
-		# TODO
+		# buildings and poles
+		(0, 2, building),
+		(3, 2, building._replace(orientation=DOWN)),
+		(0, 0, primitives.medium_pole),
+		(0, 5, primitives.medium_pole),
+		# First input, upper side
+		(1, 0, entity(E.underground_pipe, RIGHT)),
+		(2, 0, entity(E.pipe)),
+		(2, 1, entity(E.pipe)),
+		(3, 0, entity(E.underground_pipe, LEFT)),
+		# lower side
+		(2, 5, entity(E.underground_pipe, RIGHT)),
+		(3, 5, entity(E.pipe)),
+		(4, 5, entity(E.underground_pipe, LEFT)),
+		# Second input, upper side
+		(0, 1, entity(E.pipe)),
+		(1, 1, entity(E.underground_pipe, LEFT)),
+		(5, 1, entity(E.underground_pipe, RIGHT)),
+		# lower side
+		(0, 6, entity(E.underground_pipe, LEFT)),
+		(4, 6, entity(E.underground_pipe, RIGHT)),
+		(5, 6, entity(E.pipe)),
+		(5, 5, entity(E.pipe)),
+		# Output, upper side
+		(5, 0, primitives.belt_from_ground(LEFT)),
+		(4, 0, primitives.belt_to_ground(LEFT)),
+		(4, 1, entity(E.inserter, DOWN)),
+		# lower side
+		(2, 6, primitives.belt_from_ground(LEFT)),
+		(1, 6, primitives.belt_to_ground(LEFT)),
+		(1, 5, entity(E.inserter, UP)),
 	),
 	tail_width=3,
 	tail=pole_tail,
