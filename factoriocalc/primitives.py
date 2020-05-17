@@ -44,7 +44,10 @@ class _Entities(object):
 	big_pole = 'big-electric-pole'
 	beacon = 'beacon'
 	inserter = 'stack-inserter'
+	long_inserter = 'long-handed-inserter'
+	chest = 'steel-chest'
 	assembler = 'assembling-machine-3'
+	lab = 'lab'
 	splitter = 'express-splitter'
 	roboport = 'roboport'
 	furnace = 'electric-furnace'
@@ -60,6 +63,7 @@ class _Entities(object):
 	copper_wire = 'copper-cable'
 	green_circuit = 'electronic-circuit'
 	red_circuit = 'advanced-circuit'
+	rocket_silo = 'rocket-silo',
 	# not entities but still a recipe name
 	oil_products = 'advanced-oil-processing'
 

@@ -969,7 +969,7 @@ Processor('6 input assembler',
 # ↄ>>>|⊃ c>>>ↄ ⊂⊃ c>>>ↄ ⊂|
 # TODO 0/0/7 -> 0/0/0
 Processor('lab',
-	building='science lab',
+	building='lab',
 	inputs=(0, 0, 7),
 	outputs=(0, 0, 0),
 	head_width=4,
@@ -1012,3 +1012,5 @@ Processor('lab',
 # ^<< | >>>>i│       │iv  |
 #  ∩o |    ∩ │       │iv  |
 #  >>>|>>>>^o└───────┘o>>>|
+# TODO 0/0/4 -> 0/0/1
+# recipe name in silo is "rocket-part"

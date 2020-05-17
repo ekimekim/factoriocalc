@@ -25,10 +25,12 @@ entity_sizes = {
 	E.radar: x3,
 	E.assembler: x3,
 	E.chemical_plant: x3,
+	E.lab: x3,
 	E.splitter: (2, 1),
 	E.roboport: x4,
 	E.furnace: x3,
 	E.refinery: x5,
+	E.rocket_silo: (9, 9),
 }
 
 
