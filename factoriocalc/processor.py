@@ -984,3 +984,31 @@ Processor('lab',
 	tail_width=3,
 	tail=pole_tail,
 )
+
+
+# Rocket Silo
+# This is a special case, because it can't fit in the normal 7-wide space.
+# We mark it as "oversize" (by 4 - it's 11 tall!) and the bus will extend to fit.
+# Note that even though oversize, it expects the inputs and outputs in the same
+# y-slots as otherwise.
+# We fit all the belts into a 2-wide gap between each silo, because it can't run under.
+# to make this work we end up with a pretty complex gap between each silo, but
+# it's worth trading off width for height here.
+# We also need a lot of power poles to ensure all the beacons are powered,
+# though note we completely lack a tail since the body section entirely covers the beacons needed.
+# Because a rocket will happily fire even if its output is full, we make inserting a satellite
+# conditional on a per-silo output buffer box being almost empty.
+# The relevant (long-handed) inserter is marked as I instead of i.
+# We also use the normal indicators ∪⊂∩⊃ for underground belt,
+# but "crude" indicators ucnↄ for red underground belt.
+# >>>>|s>>ↄ>⊃ cↄ⊂⊃cↄ  ⊂vc>|
+# ^<o |sv>ↄ∪v⊃cↄo cↄ ⊂<∪cv|
+# >^  | ∪^ov<┌───────┐^o v|
+# >vv⊃|  ^⊂< │       │^⊃ v|
+# v∪∪ |  ^ i │       │   v|
+# >v  |  ^o☐i│       │   v|
+# <>>>|>>^ I │   S   │   >|
+# ^ ∩ | ∩    │       │ ∩  |
+# ^<< | >>>>i│       │iv  |
+#  ∩o |    ∩ │       │iv  |
+#  >>>|>>>>^o└───────┘o>>>|
