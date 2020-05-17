@@ -42,7 +42,6 @@ from .util import is_liquid, UP, RIGHT, DOWN, LEFT, Layout, line_limit
 #   This is needed because if the bus shrinks this step, the next step's beacons may extend further left
 #   than your base x, so the lower pole won't be there. But if the bus expands this step, the opposite is true.
 #   Since the bus can't shrink AND expand simultaniously, at least one will be present.
-# TODO in roboport rows, bottom pole isn't there. that should be fixed.
 
 # Each line in the bus is seperated by a 1 unit gap.
 # In general each action involving a line in the bus area should keep to its own column
@@ -431,11 +430,17 @@ def layout_roboport_row(bus, width):
 	"""
 	layout = Layout("roboports")
 
+
 	# Underpasses. Note these are shorter underpasses, without pumps.
 	for bus_pos, line in enumerate(bus):
+		bus_x = BUS_START_X + 2 * bus_pos
+		# Every 4th line + the last line gets a power pole, in order to power prior step if needed
+		if bus_pos % 4 == 0 or bus_pos == len(bus) - 1:
+			layout.place(bus_x + 1, -2, primitives.medium_pole)
+		# No need for underpass on gaps
 		if line is None:
 			continue
-		bus_x = BUS_START_X + 2 * bus_pos
+		# Place underpass
 		primitive = (
 			primitives.roboport_underpass_pipe
 			if is_liquid(line.item) else
