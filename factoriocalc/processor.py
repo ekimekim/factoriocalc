@@ -225,13 +225,6 @@ pole_tail = Layout('pole tail',
 
 # TODO List - min needed for 1000SPM inf science
 # * rocket silo 0/0/4 -> 0/0/1
-# * lab 0/0/7 -> 0/0/0
-# * chemical plant:
-#     1/0/2 -> 1/0/0 (eg. sulfuric acid)
-#     1/0/2 -> 0/1/0 (eg. battery)
-# * assembler:
-#     1/1/1 -> 0/0/1
-#     0/0/6 -> 0/0/1 (eg. satellte)
 
 # Simple processor for basic 1 -> 1 belt recipes, eg. all smelting, iron gears.
 # Can support any of the 3x3 building types (furnaces, assemblers, chemical plants).
@@ -753,6 +746,240 @@ Processor('2 fluids to belt',
 		(2, 6, primitives.belt_from_ground(LEFT)),
 		(1, 6, primitives.belt_to_ground(LEFT)),
 		(1, 5, entity(E.inserter, UP)),
+	),
+	tail_width=3,
+	tail=pole_tail,
+)
+
+
+# Processor for 1 liquid + 2 solids to a liquid, eg. sulfuric acid.
+# Pretty straightforward. We even manage to accept full input lines.
+# In the diagram below, we distinguish between pipe and belt undergrounds by using ucnↄ for belts.
+#  >ↄ |oc>>ↄ |
+# ⊃^ ⊂|=⊃ii⊂=| o
+# >^  |┌─┐┌─┐|
+# >vo |│C││C│|
+#  >v |└─┘└─┘|
+# =⊃v⊂|=⊃ii⊂=| o
+# = >ↄ|oc>>ↄ |
+Processor('1 liquid + 2 solids -> liquid',
+	building='chemical plant',
+	inputs=(1, 2, 0),
+	outputs=(1, 0, 0),
+	head_width=4,
+	head=Layout('head',
+		# single pole, connects to above and below poles.
+		# the head beacons are instead powered by the first body section.
+		(2, 3, primitives.medium_pole),
+		# liquid input
+		(0, 1, entity(E.underground_pipe, LEFT)),
+		(3, 1, entity(E.underground_pipe, RIGHT)),
+		# first belt input
+		(0, 2, primitives.belt(RIGHT)),
+		(1, 2, primitives.belt(UP, 2)),
+		(1, 0, primitives.belt(RIGHT)),
+		(2, 0, primitives.belt_to_ground(RIGHT)),
+		# second belt input
+		(0, 3, primitives.belt(RIGHT)),
+		(1, 3, primitives.belt(DOWN)),
+		(1, 4, primitives.belt(RIGHT)),
+		(2, 4, primitives.belt(DOWN, 2)),
+		(2, 6, primitives.belt(RIGHT)),
+		(3, 6, primitives.belt_to_ground(RIGHT)),
+		# output
+		(3, 5, entity(E.underground_pipe, RIGHT)),
+		(1, 5, entity(E.underground_pipe, LEFT)),
+		(0, 5, primitives.pipe(DOWN, 2)),
+	),
+	body_width=6,
+	per_body_buildings=2,
+	body=lambda building: Layout('body',
+		# poles
+		(0, 0, primitives.medium_pole),
+		(0, 6, primitives.medium_pole),
+		# buildings
+		(0, 2, building),
+		(3, 2, building),
+		# liquid input
+		(0, 1, entity(E.pipe)),
+		(1, 1, entity(E.underground_pipe, LEFT)),
+		(4, 1, entity(E.underground_pipe, RIGHT)),
+		(5, 1, entity(E.pipe)),
+		# first belt input
+		(1, 0, primitives.belt_from_ground(RIGHT)),
+		(2, 0, primitives.belt(RIGHT, 2)),
+		(2, 1, entity(E.inserter, UP)),
+		(3, 1, entity(E.inserter, UP)),
+		(4, 0, primitives.belt_to_ground(RIGHT)),
+		# second belt input
+		(1, 6, primitives.belt_from_ground(RIGHT)),
+		(2, 6, primitives.belt(RIGHT, 2)),
+		(2, 5, entity(E.inserter, DOWN)),
+		(3, 5, entity(E.inserter, DOWN)),
+		(4, 6, primitives.belt_to_ground(RIGHT)),
+		# output
+		(0, 5, entity(E.pipe)),
+		(1, 5, entity(E.underground_pipe, LEFT)),
+		(4, 5, entity(E.underground_pipe, RIGHT)),
+		(5, 5, entity(E.pipe)),
+	),
+	tail_width=3,
+	tail=pole_tail,
+)
+
+
+# Processor for 1 liquid + 2 solids to a solid.
+# Similar to previous, except we combine both inputs into one line so we have room for
+# the output line.
+# In the diagram below, we distinguish between pipe and belt undergrounds by using ucnↄ for belts.
+#  >ↄ |oc>>ↄ |
+# ⊃^ ⊂|=⊃ii⊂=| o
+# >^< |┌─┐┌─┐|
+# >>^ |│C││C│|
+#  o  |└─┘└─┘|
+#     |oivSi | o
+# <<<<|<<<s<<|
+Processor('1 liquid + 2 solids -> solid',
+	building='chemical plant',
+	inputs=(1, 0, 2),
+	outputs=(0, 1, 0),
+	head_width=4,
+	head=Layout('head',
+		# single power pole connects to top and bottom, the head's beacons are powered
+		# by the first body section.
+		(1, 4, primitives.medium_pole),
+		# liquid input
+		(0, 1, entity(E.underground_pipe, LEFT)),
+		(3, 1, entity(E.underground_pipe, RIGHT)),
+		# first belt input
+		(0, 2, primitives.belt(RIGHT)),
+		# second belt input
+		(0, 3, primitives.belt(RIGHT, 2)),
+		(2, 3, primitives.belt(UP)),
+		(2, 2, primitives.belt(LEFT)),
+		# combined belt input
+		(1, 2, primitives.belt(UP, 2)),
+		(1, 0, primitives.belt(RIGHT)),
+		(2, 0, primitives.belt_to_ground(RIGHT)),
+		# output
+		(3, 6, primitives.belt(LEFT, 4)),
+	),
+	body_width=6,
+	per_body_buildings=2,
+	body=lambda building: Layout('body',
+		# poles
+		(0, 0, primitives.medium_pole),
+		(0, 5, primitives.medium_pole),
+		# buildings
+		(0, 2, building),
+		(3, 2, building),
+		# liquid input
+		(0, 1, entity(E.pipe)),
+		(1, 1, entity(E.underground_pipe, LEFT)),
+		(4, 1, entity(E.underground_pipe, RIGHT)),
+		(5, 1, entity(E.pipe)),
+		# belt input
+		(1, 0, primitives.belt_from_ground(RIGHT)),
+		(2, 0, primitives.belt(RIGHT, 2)),
+		(2, 1, entity(E.inserter, UP)),
+		(3, 1, entity(E.inserter, UP)),
+		(4, 0, primitives.belt_to_ground(RIGHT)),
+		# output
+		(5, 6, primitives.belt(LEFT, 2)),
+		(4, 5, entity(E.inserter, UP)),
+		(3, 5, entity(E.splitter, LEFT, output_priority='right')),
+		(2, 5, primitives.belt(DOWN)),
+		(2, 6, primitives.belt(LEFT, 3)),
+		(1, 5, entity(E.inserter, UP)),
+	),
+	tail_width=3,
+	tail=pole_tail,
+)
+
+
+# Processor for assemblers with a liquid input.
+# Can additionally take 1 full and 1 half belt input, and outputs to one half.
+# Could probably be tweaked to allow a full output?
+# In the diagram below, we distinguish between pipe and belt undergrounds by using cↄ for belts,
+# and () for red belts.
+# =⊃ >|ↄo⊂=⊃c|
+# =  ^|i====i| o
+# >>>^|┌─┐┌─┐|
+# >vo |│A││A│|
+#  v  |└─┘└─┘|
+#  v  |ioii i| o
+# ↄ>)c|ↄ () c|
+Processor('assembler with liquid input',
+	inputs=(1, 1, 1),
+	outputs=(0, 0, 1),
+	head_width=4,
+	head=Layout('head',
+		# TODO
+	),
+	body_width=6,
+	per_body_buildings=2,
+	body=Layout('body',
+		# TODO
+	),
+	tail_width=3,
+	tail=pole_tail,
+)
+
+
+# 6 inputs to one output, for satellite.
+# We relax efficiency here since this is a low-throughput item.
+# Note tail doesn't need extended length.
+# Note some minor changes could make this 0/2/4 -> 0/1/0 instead,
+# but meh.
+# >v>>>|>>>>>>|
+# ⊃>^⊂v| oi   | o
+# >^o >|⊃i┌─┐⊂|
+# >v >>|⊃i│A│⊂|
+# ⊃>>^⊂|⊃i└─┘⊂|
+# >^o  |oi    | o
+# <<<<<|<<<<<<|
+Processor('6 input assembler',
+	inputs=(0, 0, 6),
+	outputs=(0, 0, 1),
+	head_width=5,
+	head=Layout('head',
+		# TODO
+	),
+	body_width=6,
+	per_body_buildings=1,
+	body=Layout('body',
+		# TODO
+	),
+	tail_width=2,
+	tail=pole_tail,
+)
+
+
+# 7 inputs to lab, for science!
+# This is a particularly large pattern made up of two almost-identical copies.
+# We could avoid this, but meh.
+# In the diagram below, we use the normal indicators ∪⊂∩⊃ for underground belt,
+# but "crude" indicators ucnↄ for red underground belt.
+# ↄ>>>|⊃ c>>>ↄ ⊂⊃ c>>>ↄ ⊂|
+# >^< |ioi   ioiioi   ioi| o
+# ⊃o^ |┌─┐⊂v ┌─┐┌─┐ >⊃┌─┐|
+# >>^ |│L│ v │L││L│ ^ │L│|
+# >>v |└─┘ >⊃└─┘└─┘⊂^ └─┘|
+# >v< |ioi   ioiioi   ioi| o
+# ↄ>>>|⊃ c>>>ↄ ⊂⊃ c>>>ↄ ⊂|
+# TODO 0/0/7 -> 0/0/0
+Processor('lab',
+	building='science lab',
+	inputs=(0, 0, 7),
+	outputs=(0, 0, 0),
+	head_width=4,
+	head=Layout('head',
+		# TODO
+	),
+	body_width=9,
+	per_body_buildings=2,
+	body=Layout('body',
+		# TODO
 	),
 	tail_width=3,
 	tail=pole_tail,
