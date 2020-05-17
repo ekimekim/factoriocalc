@@ -21,11 +21,21 @@ def orientation_to_vector(orientation):
 Entity = namedtuple('Entity', [
 	'name',
 	'orientation', # 0-3, 0 is 'up', 1 is 'right', etc.
+	'connections', # list of (port, color, rel_x, rel_y, target_port) of other entities connected by circuit wire.
+	               # port is generally 1, and refers to which connection point on this entity is used.
+	               # target_port is the same but for the target.
+	               # color is red or green. Both sides must link to each other.
+	               # You can use circuit() as a helper function for this.
 	'attrs', # arbitrary extra attributes {attr: value}, should match Entity keys in blueprint format
 ])
 
-def entity(name, orientation=None, **attrs):
-	return Entity(name, orientation, attrs)
+def entity(name, orientation=None, connections=[], **attrs):
+	return Entity(name, orientation, connections, attrs)
+
+
+def circuit(rel_x, rel_y, color='green', port=1, target_port=1):
+	"""helper method for setting Entity connections, eg. Entity(E.chest, connections=[circuit(0, 1)])"""
+	return port, color, rel_x, rel_y, target_port
 
 
 # A mapping from easy internal names to official names

@@ -1014,3 +1014,15 @@ Processor('lab',
 #  >>>|>>>>^o└───────┘o>>>|
 # TODO 0/0/4 -> 0/0/1
 # recipe name in silo is "rocket-part"
+# box and inserter should be connected with a circuit (default color/ports is fine)
+# inserter should also have attr:
+# "control_behavior": {
+#  "circuit_condition": {
+#   "constant": 1000, 
+#   "first_signal": {
+#    "type": "item", 
+#    "name": "space-science-pack"
+#   }, 
+#   "comparator": "<"
+#  }
+# }, 

@@ -50,6 +50,8 @@ def encode(entities, label="Generated", icons=[E.assembler]):
 		for pos, entity in entities
 	])
 	center = Point(width / 2 + .5, height / 2 + .5)
+	# lookup for resolving connections
+	entity_number_by_position = {pos: i+1 for i, (pos, entity) in enumerate(entities)}
 	blueprint = {
 		"blueprint": {
 			"item": "blueprint",
@@ -65,7 +67,7 @@ def encode(entities, label="Generated", icons=[E.assembler]):
 				} for i, item in enumerate(icons)
 			],
 			"entities": [
-				encode_entity(i + 1, pos, entity, center)
+				encode_entity(entity_number_by_position, i + 1, pos, entity, center)
 				for i, (pos, entity) in enumerate(entities)
 			],
 		}
@@ -83,7 +85,7 @@ def decode_json(data):
 	return json.loads(zlib.decompress(base64.b64decode(data[1:])))
 
 
-def encode_entity(number, pos, entity, center):
+def encode_entity(entity_number_by_position, number, pos, entity, center):
 	width, height = entity_sizes.get(entity.name, (1, 1))
 	if entity.orientation is not None and entity.orientation % 2 == 1:
 		# Rotate entities if left or right
@@ -96,6 +98,19 @@ def encode_entity(number, pos, entity, center):
 			"y": pos.y + height / 2. - center.y,
 		},
 	}
+	if entity.connections:
+		ret['connections'] = {}
+		for port, color, rel_x, rel_y, target_port in entity.connections:
+			target_pos = Point(pos.x + rel_x, pos.y + rel_y)
+			if target_pos not in entity_number_by_position:
+				raise ValueError("{name} at {pos} tried to target {target_pos} for {color} connection, but nothing is there".format(
+					name=entity.name, pos=pos, target_pos=target_pos, color=color,
+				))
+			target_number = entity_number_by_position[target_pos]
+			target = {"entity_id": target_number}
+			if target_port:
+				target['circuit_id'] = target_port
+			ret['connections'].setdefault(str(port), {}).setdefault(color, []).append(target)
 	if entity.orientation is not None and entity.orientation != UP:
 		# In their blueprints, up-oriented things have direction omitted.
 		# I suspect this would work either way but shorter blueprints is always nice.
