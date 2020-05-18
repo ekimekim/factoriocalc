@@ -86,19 +86,33 @@ def layout(beacon_module, steps, final_bus):
 	# * Beacon widths (needs to cover the extremes of above and below rows)
 	# * Insert a roboport+radar line every 10 rows,
 	#   so that all entities are covered by construction area
-	ROW_SIZE = 10 # each step is separated by 10 y-units
-	ROWS_PER_ROBOPORT_AREA = 10 # roboports every 10 rows
+	# * Handling oversize rows
+	STEP_SIZE = 10 # does not include oversize
+	ROBOPORT_AREA_SIZE = 110 - 4 # Construction area is 110, but roboport rows themselves are 4 tall.
+	                             # So we can have 106 units between roboport rows.
 	layout = Layout('root')
 	roboport_rows = [] # list of (bus, y pos)
 	prev_beacon_start = None
 	prev_beacon_end = 0
 	base_y = 3 # leave room for top beacon row before first row
-	steps_since_roboports = ROWS_PER_ROBOPORT_AREA / 2 # since there's no roboports above, start "halfway" through a roboport section
+	height_since_roboports = ROBOPORT_AREA_SIZE / 2 # since there's no roboports above, start "halfway" through a roboport section
+	height_since_roboports += 1 # ensure top beacon row is included in first roboport section
 	max_width = 0
+	oversize = 0
 	for step in steps:
-		# check if we need roboport row
-		if steps_since_roboports >= ROWS_PER_ROBOPORT_AREA:
-			assert steps_since_roboports == ROWS_PER_ROBOPORT_AREA
+		# If previous step was oversize, extend the bus to compensate.
+		if oversize:
+			layout.place(0, base_y, layout_bus_extension(step.bus, oversize))
+			base_y += oversize
+			height_since_roboports += oversize
+
+		# Step layout doesn't actually depend on exactly where step will be placed,
+		# and lets us work out width and height immediately.
+		# Note oversize is carried across to next loop iteration.
+		step_layout, beacon_start, beacon_end, oversize = layout_step(step)
+
+		# Check if we need roboport row, ie. if this step would extend past the end of roboport area.
+		if height_since_roboports + STEP_SIZE + oversize > ROBOPORT_AREA_SIZE:
 			# add beacons for bottom of row above if needed
 			if prev_beacon_start is not None:
 				layout.place(prev_beacon_start, base_y - 3, layout_beacons(beacon_module, prev_beacon_end - prev_beacon_start))
@@ -108,9 +122,9 @@ def layout(beacon_module, steps, final_bus):
 			prev_beacon_start = None
 			prev_beacon_end = 0
 			base_y += 3 + 4 # 3 for beacons, 4 for roboports
-			steps_since_roboports = 0
+			height_since_roboports = 3 # to cover next row of beacons
 
-		step_layout, beacon_start, beacon_end = layout_step(step)
+		# ok, now we know where this step is going, place it
 		layout.place(0, base_y, step_layout)
 		# add beacon row above this step
 		row_start = min(beacon_start, prev_beacon_start) if prev_beacon_start is not None else beacon_start
@@ -121,14 +135,20 @@ def layout(beacon_module, steps, final_bus):
 		prev_beacon_end = beacon_end
 		if beacon_end > max_width:
 			max_width = beacon_end
-		base_y += ROW_SIZE
-		steps_since_roboports += 1
+		base_y += STEP_SIZE
+		height_since_roboports += STEP_SIZE
+
+	# check if last row was oversize
+	if oversize:
+		layout.place(0, base_y, layout_bus_extension(final_bus, oversize))
+		base_y += oversize
+		height_since_roboports += oversize
 
 	# final beacon row, unless we ended in something weird (eg. roboport row)
 	if prev_beacon_start is not None:
 		layout.place(prev_beacon_start, base_y - 3, layout_beacons(beacon_module, prev_beacon_end - prev_beacon_start))
 	# check if we need a final row of roboports so that last row is in range
-	if steps_since_roboports > ROWS_PER_ROBOPORT_AREA / 2:
+	if height_since_roboports > ROBOPORT_AREA_SIZE / 2:
 		roboport_rows.append((final_bus, base_y))
 
 	# resolve roboport rows now that we know max width
@@ -144,6 +164,7 @@ def layout_step(step):
 		layout
 		x position to start beacons at
 		how long beacon rows above and below must extend (0 if beacons not needed)
+		how much the step is oversize by
 	"""
 	layout = Layout(str(step))
 	bus_width = step.width * 2
@@ -158,13 +179,28 @@ def layout_step(step):
 
 	layout.place(0, 0, layout_bus(step, padding, process_base_x))
 	if isinstance(step, Placement):
-		process_layout, process_width = layout_process(step)
+		process_layout, process_width, oversize = layout_process(step)
 		layout.place(process_base_x, 0, process_layout)
 		process_end = process_width + process_base_x
 	else:
 		process_end = 0
+		oversize = 0
 
-	return layout, process_base_x, process_end
+	return layout, process_base_x, process_end, oversize
+
+
+def layout_bus_extension(bus, size):
+	"""Layout an extension that carries the bus SIZE units downwards,
+	to bridge the gap between the previous step's oversize layout and this step."""
+	layout = Layout("bus extension")
+	for bus_pos, line in enumerate(bus):
+		if line is None:
+			continue
+		bus_x = BUS_START_X + 2 * bus_pos
+		primitive_fn = primitives.pipe if is_liquid(line.item) else primitives.belt
+		primitive = primitive_fn(DOWN, size)
+		layout.place(bus_x, -2, primitive)
+	return layout
 
 
 def layout_bus(step, padding, process_base_x):
@@ -401,6 +437,7 @@ def layout_process(step):
 	Returns:
 	* layout
 	* the end point of the process in the x axis, ie. the width.
+	* how much the process is oversize by (normally 0)
 	"""
 	def classify_items(in_or_out):
 		liquids, belts, halfbelts = 0, 0, 0
@@ -420,7 +457,7 @@ def layout_process(step):
 		)
 	except ValueError:
 		# TODO For now, silently ignore missing processor and provide dummy values
-		return Layout("dummy processor"), 9
+		return Layout("dummy processor"), 9, 0
 	return processor.layout(step)
 
 

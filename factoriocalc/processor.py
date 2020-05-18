@@ -65,12 +65,14 @@ class Processor(object):
 		head=EMPTY, body=EMPTY, tail=EMPTY,
 		head_width=0, body_width=0, tail_width=0,
 		base_buildings=0, per_body_buildings=0,
+		oversize=0,
 	):
 		"""Most args are self-evident, see main docstring.
 		head, body and tail may be callable, in which case they take, as an arg,
 		a primitive representing the production building of the recipe.
 		Building may be an iterable listing all supported buildings (this only makes
 		sense when using the callable-body feature).
+		A process may be oversize, giving it a between-beacons height of 7 + oversize.
 		"""
 		self.name = name
 		self.buildings = [building] if isinstance(building, basestring) else building
@@ -84,6 +86,7 @@ class Processor(object):
 		self.tail_width = tail_width
 		self.base_buildings = base_buildings
 		self.per_body_buildings = per_body_buildings
+		self.oversize = oversize
 		self.PROCESSORS.append(self) # note PROCESSORS is shared between all Processor instances
 
 	def match_score(self, building, inputs, outputs):
@@ -189,7 +192,7 @@ class Processor(object):
 		return entity(E[recipe.building.name], **attrs)
 
 	def layout(self, step):
-		"""Returns (layout, width) for the given step, which must already be matching."""
+		"""Returns (layout, width, oversize) for the given step, which must already be matching."""
 		building = self.get_building_primitive(step.process.recipe)
 		layout = Layout("process: {}".format(self.name))
 		layout.place(0, 0, self.resolve_layout(building, self.head))
@@ -202,7 +205,7 @@ class Processor(object):
 			0,
 			self.resolve_layout(building, self.tail)
 		)
-		return layout, self.head_width + bodies * self.body_width + self.tail_width
+		return layout, self.head_width + bodies * self.body_width + self.tail_width, self.oversize
 
 
 # Useful sub-layouts for common patterns
@@ -998,20 +1001,22 @@ Processor('lab',
 # though note we completely lack a tail since the body section entirely covers the beacons needed.
 # Because a rocket will happily fire even if its output is full, we make inserting a satellite
 # conditional on a per-silo output buffer box being almost empty.
+# We also need to extend the body 2 more spaces than otherwise to ensure the width is a multiple
+# of 3, or else some silos will be less beaconed than others.
 # The relevant (long-handed) inserter is marked as I instead of i.
 # We also use the normal indicators ∪⊂∩⊃ for underground belt,
 # but "crude" indicators ucnↄ for red underground belt.
-# >>>>|s>>ↄ>⊃ cↄ⊂⊃cↄ  ⊂vc>|
-# ^<o |sv>ↄ∪v⊃cↄo cↄ ⊂<∪cv|
-# >^  | ∪^ov<┌───────┐^o v|
-# >vv⊃|  ^⊂< │       │^⊃ v|
-# v∪∪ |  ^ i │       │   v|
-# >v  |  ^o☐i│       │   v|
-# <>>>|>>^ I │   S   │   >|
-# ^ ∩ | ∩    │       │ ∩  |
-# ^<< | >>>>i│       │iv  |
-#  ∩o |    ∩ │       │iv  |
-#  >>>|>>>>^o└───────┘o>>>|
+# >>>>|s>>ↄ>⊃ cↄ⊂⊃cↄ  ⊂vc>>>|
+# ^<o |sv>ↄ∪v⊃cↄo cↄ ⊂<∪cv  |
+# >^  | ∪^ov<┌───────┐^o v  |
+# >vv⊃|  ^⊂< │       │^⊃ v  |
+# v∪∪ |  ^ i │       │   v  |
+# >v  |  ^o☐i│       │   v  |
+# <>>>|>>^ I │   S   │   >>>|
+# ^ ∩ | ∩    │       │ ∩    |
+# ^<< | >>>>i│       │iv    |
+#  ∩o |    ∩ │       │iv    |
+#  >>>|>>>>^o└───────┘o>>>>>|
 # TODO 0/0/4 -> 0/0/1
 # recipe name in silo is "rocket-part"
 # box and inserter should be connected with a circuit (default color/ports is fine)
@@ -1026,3 +1031,18 @@ Processor('lab',
 #   "comparator": "<"
 #  }
 # }, 
+Processor('rocket silo',
+	building='rocket silo',
+	inputs=(0, 0, 4),
+	outputs=(0, 0, 1),
+	oversize=4,
+	head_width=4,
+	head=Layout('head',
+		# TODO
+	),
+	body_width=21, # ouch
+	per_body_buildings=1,
+	body=Layout('body',
+		# TODO
+	),
+)
