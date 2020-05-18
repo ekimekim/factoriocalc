@@ -1060,7 +1060,7 @@ Processor('6 input assembler',
 # ↄ>>>|⊃ c>>>ↄ ⊂⊃ c>>>ↄ ⊂|
 # >^< |ioi   ioiioi   ioi| o
 # ⊃o^ |┌─┐⊂v ┌─┐┌─┐ >⊃┌─┐|
-# >>^ |│L│ v │L││L│ ^ │L│|
+# >>^ |│L│ivi│L││L│i^i│L│|
 # >>v |└─┘ >⊃└─┘└─┘⊂^ └─┘|
 # >v< |ioi   ioiioi   ioi| o
 # ↄ>>>|⊃ c>>>ↄ ⊂⊃ c>>>ↄ ⊂|
@@ -1071,12 +1071,103 @@ Processor('lab',
 	outputs=(0, 0, 0),
 	head_width=4,
 	head=Layout('head',
-		# TODO
+		# pole
+		(1, 2, primitives.medium_pole),
+		# input 1
+		(0, 0, primitives.belt_to_ground(RIGHT, type='red')),
+		# input 2
+		(0, 1, primitives.belt(RIGHT)),
+		# input 3
+		(0, 2, primitives.belt_to_ground(RIGHT)),
+		# input 4
+		(0, 3, primitives.belt(RIGHT, 2)),
+		(2, 3, primitives.belt(UP, 2)),
+		(2, 1, primitives.belt(LEFT)),
+		# input 2+4
+		(1, 1, primitives.belt(UP)),
+		(1, 0, primitives.belt(RIGHT, 3)),
+		# input 5
+		(0, 4, primitives.belt(RIGHT, 2)),
+		(2, 4, primitives.belt(DOWN)),
+		(2, 5, primitives.belt(LEFT)),
+		# input 6
+		(0, 5, primitives.belt(RIGHT)),
+		# input 5+6
+		(1, 5, primitives.belt(DOWN)),
+		(1, 6, primitives.belt(RIGHT, 3)),
+		# input 7
+		(0, 6, primitives.belt_to_ground(RIGHT, type='red')),
 	),
-	body_width=9,
-	per_body_buildings=2,
+	body_width=18,
+	per_body_buildings=4,
 	body=Layout('body',
-		# TODO
+		# poles
+		(1, 1, primitives.medium_pole),
+		(7, 1, primitives.medium_pole),
+		(10, 1, primitives.medium_pole),
+		(16, 1, primitives.medium_pole),
+		(1, 5, primitives.medium_pole),
+		(7, 5, primitives.medium_pole),
+		(10, 5, primitives.medium_pole),
+		(16, 5, primitives.medium_pole),
+		# buildings
+		(0, 2, entity(E.lab)),
+		(6, 2, entity(E.lab)),
+		(9, 2, entity(E.lab)),
+		(15, 2, entity(E.lab)),
+		# input 2+4
+		(0, 0, primitives.belt_to_ground(RIGHT)),
+		(0, 1, entity(E.inserter, UP)),
+		(8, 0, primitives.belt_from_ground(RIGHT)),
+		(8, 1, entity(E.inserter, UP)),
+		(9, 0, primitives.belt_to_ground(RIGHT)),
+		(9, 1, entity(E.inserter, UP)),
+		(17, 0, primitives.belt_from_ground(RIGHT)),
+		(17, 1, entity(E.inserter, UP)),
+		# input 1
+		(2, 0, primitives.belt_from_ground(RIGHT, type='red')),
+		(2, 1, entity(E.inserter, UP)),
+		(3, 0, primitives.belt(RIGHT, 3)),
+		(6, 0, primitives.belt_to_ground(RIGHT, type='red')),
+		(6, 1, entity(E.inserter, UP)),
+		(11, 0, primitives.belt_from_ground(RIGHT, type='red')),
+		(11, 1, entity(E.inserter, UP)),
+		(12, 0, primitives.belt(RIGHT, 3)),
+		(15, 0, primitives.belt_to_ground(RIGHT, type='red')),
+		(15, 1, entity(E.inserter, UP)),
+		# input 5+6
+		(0, 6, primitives.belt_to_ground(RIGHT)),
+		(0, 5, entity(E.inserter, DOWN)),
+		(8, 6, primitives.belt_from_ground(RIGHT)),
+		(8, 5, entity(E.inserter, DOWN)),
+		(9, 6, primitives.belt_to_ground(RIGHT)),
+		(9, 5, entity(E.inserter, DOWN)),
+		(17, 6, primitives.belt_from_ground(RIGHT)),
+		(17, 5, entity(E.inserter, DOWN)),
+		# input 7
+		(2, 6, primitives.belt_from_ground(RIGHT, type='red')),
+		(2, 5, entity(E.inserter, DOWN)),
+		(3, 6, primitives.belt(RIGHT, 3)),
+		(6, 6, primitives.belt_to_ground(RIGHT, type='red')),
+		(6, 5, entity(E.inserter, DOWN)),
+		(11, 6, primitives.belt_from_ground(RIGHT, type='red')),
+		(11, 5, entity(E.inserter, DOWN)),
+		(12, 6, primitives.belt(RIGHT, 3)),
+		(15, 6, primitives.belt_to_ground(RIGHT, type='red')),
+		(15, 5, entity(E.inserter, DOWN)),
+		# input 3
+		(3, 2, primitives.belt_from_ground(RIGHT)),
+		(4, 2, primitives.belt(DOWN, 2)),
+		(3, 3, entity(E.inserter, RIGHT)),
+		(5, 3, entity(E.inserter, LEFT)),
+		(4, 4, primitives.belt(RIGHT)),
+		(5, 4, primitives.belt_to_ground(RIGHT)),
+		(12, 4, primitives.belt_from_ground(RIGHT)),
+		(13, 4, primitives.belt(UP, 2)),
+		(12, 3, entity(E.inserter, RIGHT)),
+		(14, 3, entity(E.inserter, LEFT)),
+		(13, 2, primitives.belt(RIGHT)),
+		(14, 2, primitives.belt_to_ground(RIGHT)),
 	),
 	tail_width=3,
 	tail=pole_tail,
