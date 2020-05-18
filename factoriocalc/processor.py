@@ -980,19 +980,72 @@ Processor('assembler with liquid input',
 # >^o >|⊃i┌─┐⊂|
 # >v >>|⊃i│A│⊂|
 # ⊃>>^⊂|⊃i└─┘⊂|
-# >^o  |oi    | o
+# >^o  | oi   | o
 # <<<<<|<<<<<<|
 Processor('6 input assembler',
 	inputs=(0, 0, 6),
 	outputs=(0, 0, 1),
 	head_width=5,
 	head=Layout('head',
-		# TODO
+		# poles
+		(2, 2, primitives.medium_pole),
+		(2, 5, primitives.medium_pole),
+		# first input
+		(0, 0, primitives.belt(RIGHT)),
+		(1, 0, primitives.belt(DOWN)),
+		# second input
+		(0, 1, primitives.belt_to_ground(RIGHT)),
+		(3, 1, primitives.belt_from_ground(RIGHT)),
+		(4, 1, primitives.belt(DOWN)),
+		(4, 2, primitives.belt(RIGHT)),
+		# third input
+		(0, 2, primitives.belt(RIGHT)),
+		(1, 2, primitives.belt(UP)),
+		# 1+3 input
+		(1, 1, primitives.belt(RIGHT)),
+		(2, 1, primitives.belt(UP)),
+		(2, 0, primitives.belt(RIGHT, 3)),
+		# fourth input
+		(0, 3, primitives.belt(RIGHT)),
+		(1, 3, primitives.belt(DOWN)),
+		# fifth input
+		(0, 4, primitives.belt_to_ground(RIGHT)),
+		(4, 4, primitives.belt_from_ground(RIGHT)),
+		# sixth input (phew)
+		(0, 5, primitives.belt(RIGHT)),
+		(1, 5, primitives.belt(UP)),
+		# 4+6 input
+		(1, 4, primitives.belt(RIGHT, 2)),
+		(3, 4, primitives.belt(UP)),
+		(3, 3, primitives.belt(RIGHT, 2)),
+		# output
+		(4, 6, primitives.belt(LEFT, 5)),
 	),
 	body_width=6,
 	per_body_buildings=1,
-	body=Layout('body',
-		# TODO
+	body=lambda building: Layout('body',
+		# poles and building
+		(1, 1, primitives.medium_pole),
+		(1, 5, primitives.medium_pole),
+		(2, 2, building),
+		# 1+3 input
+		(0, 0, primitives.belt(RIGHT, 6)),
+		(2, 1, entity(E.inserter, UP)),
+		# 2 input
+		(0, 2, primitives.belt_to_ground(RIGHT)),
+		(1, 2, entity(E.inserter, LEFT)),
+		(5, 2, primitives.belt_from_ground(RIGHT)),
+		# 4+6 input
+		(0, 3, primitives.belt_to_ground(RIGHT)),
+		(1, 3, entity(E.inserter, LEFT)),
+		(5, 3, primitives.belt_from_ground(RIGHT)),
+		# 5 input
+		(0, 4, primitives.belt_to_ground(RIGHT)),
+		(1, 4, entity(E.inserter, LEFT)),
+		(5, 4, primitives.belt_from_ground(RIGHT)),
+		# output
+		(5, 6, primitives.belt(LEFT, 6)),
+		(2, 5, entity(E.inserter, UP)),
 	),
 	tail_width=2,
 	tail=pole_tail,
