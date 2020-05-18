@@ -59,7 +59,9 @@ class ArtEncoder(object):
 		E.assembler: yellow(boxed("A")),
 		E.furnace: blue(boxed("F")),
 		E.chemical_plant: blue(boxed("C")),
+		E.lab: white(boxed('L')),
 		E.refinery: green(boxed("R", n=5)), # oil drum
+		E.rocket_silo: boxed('S', n=9),
 		E.belt: lambda obj: blue([[
 			{
 				0: '^',
