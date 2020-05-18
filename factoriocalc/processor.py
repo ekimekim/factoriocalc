@@ -917,12 +917,53 @@ Processor('assembler with liquid input',
 	outputs=(0, 0, 1),
 	head_width=4,
 	head=Layout('head',
-		# TODO
+		# poles
+		(2, 3, primitives.medium_pole),
+		# liquid input
+		(0, 1, primitives.pipe(UP, 2)),
+		(1, 0, entity(E.underground_pipe, LEFT)),
+		# first belt input
+		(0, 2, primitives.belt(RIGHT, 3)),
+		(3, 2, primitives.belt(UP, 2)),
+		(3, 0, primitives.belt(RIGHT)),
+		# second belt input
+		(0, 3, primitives.belt(RIGHT)),
+		(1, 3, primitives.belt(DOWN, 3)),
+		(1, 6, primitives.belt(RIGHT)),
+		(2, 6, primitives.belt_to_ground(RIGHT, type='red')),
+		# output
+		(3, 6, primitives.belt_to_ground(LEFT)),
+		(0, 6, primitives.belt_from_ground(LEFT)),
 	),
 	body_width=6,
 	per_body_buildings=2,
-	body=Layout('body',
-		# TODO
+	body=lambda building: Layout('body',
+		# poles
+		(1, 0, primitives.medium_pole),
+		(1, 5, primitives.medium_pole),
+		# buildings
+		(0, 2, building),
+		(3, 2, building),
+		# liquid input
+		(2, 0, entity(E.underground_pipe, RIGHT)),
+		(3, 0, entity(E.pipe)),
+		(1, 1, primitives.pipe(RIGHT, 4)),
+		(4, 0, entity(E.underground_pipe, LEFT)),
+		# first belt input
+		(0, 0, primitives.belt_to_ground(RIGHT)),
+		(0, 1, entity(E.inserter, UP)),
+		(5, 0, primitives.belt_from_ground(RIGHT)),
+		(5, 1, entity(E.inserter, UP)),
+		# second belt input
+		(2, 6, primitives.belt_from_ground(RIGHT, type='red')),
+		(2, 5, entity(E.inserter, DOWN)),
+		(3, 6, primitives.belt_to_ground(RIGHT, type='red')),
+		(3, 5, entity(E.inserter, DOWN)),
+		# output
+		(5, 6, primitives.belt_to_ground(LEFT)),
+		(5, 5, entity(E.inserter, UP)),
+		(0, 6, primitives.belt_from_ground(LEFT)),
+		(0, 5, entity(E.inserter, UP)),
 	),
 	tail_width=3,
 	tail=pole_tail,
