@@ -129,7 +129,7 @@ decider combinator takes 0.5 in assembler, 5 copper wire, 5 green circuit
 constant combinator takes 0.5 in assembler, 5 copper wire, 2 green circuit
 power switch takes 2 in assembler, 5 copper wire, 2 green circuit, 5 iron plate
 speaker takes 2 in assembler, 5 copper wire, 4 green circuit, 3 iron plate, 4 iron stick
-stone brick takes 3.2 in furnace, 2 stone
+stone brick takes 3.2 in furnace, 2 stone, can take productivity
 10 concrete takes 10 in assembler, 1 iron ore, 5 stone brick, 100 water
 10 hazard concrete takes 0.25 in assembler, 10 concrete
 10 refined conrete takes 15 in assembler, 20 concrete, 8 iron stick, 1 steel plate, 100 water
