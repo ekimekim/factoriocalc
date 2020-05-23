@@ -420,6 +420,8 @@ def layout_compaction(step):
 
 	# shifts. note we assume source is to the right of dest
 	for right, left in step.shifts:
+		liquid = is_liquid(step.bus[right].item)
+		pipe_or_belt = primitives.pipe if liquid else primitives.belt
 		# right part
 		layout.place(bus_x(right), -2, primitives.pipe_to_left if liquid else primitives.belt_to_left)
 		# right to left line

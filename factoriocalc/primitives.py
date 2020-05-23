@@ -41,6 +41,9 @@ def circuit(rel_x, rel_y, color='green', port=1, target_port=1):
 # A mapping from easy internal names to official names
 class _Entities(object):
 	# guessed
+	yellow_underground_belt = 'underground-belt'
+
+	# checked
 	red_science = 'automation-science-pack'
 	green_science = 'logistic-science-pack'
 	black_science = 'military-science-pack'
@@ -54,8 +57,6 @@ class _Entities(object):
 	robot_frame = 'flying-robot-frame'
 	ammo = 'firearm-magazine'
 	piercing_ammo = 'piercing-rounds-magazine'
-
-	# checked
 	plastic = 'plastic-bar'
 	engine = 'engine-unit'
 	solid_fuel = 'solid-fuel-from-light-oil'
@@ -66,6 +67,7 @@ class _Entities(object):
 	pump = 'pump'
 	belt = 'express-transport-belt'
 	underground_belt = 'express-underground-belt'
+	blue_underground_belt = underground_belt
 	red_underground_belt = 'fast-underground-belt'
 	medium_pole = 'medium-electric-pole'
 	big_pole = 'big-electric-pole'
