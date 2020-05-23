@@ -542,9 +542,14 @@ Processor('3x half -> full',
 		(0, 1, primitives.belt(UP)),
 		(0, 0, primitives.belt(RIGHT)),
 		(1, 0, primitives.belt_to_ground(RIGHT, type='red')),
-		# second input + combined second and third
+		# second input
 		(0, 2, primitives.belt(RIGHT)),
-		(1, 2, primitives.belt(UP)), # third joins
+		# third input
+		(0, 3, primitives.belt(RIGHT, 2)),
+		(2, 3, primitives.belt(UP)),
+		(2, 2, primitives.belt(LEFT)),
+		# 2 + 3
+		(1, 2, primitives.belt(UP)),
 		(1, 1, primitives.belt(RIGHT)),
 		(2, 1, primitives.belt(UP)),
 		(2, 0, primitives.belt(RIGHT, 2)),
