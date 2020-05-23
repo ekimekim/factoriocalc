@@ -83,10 +83,8 @@ class _Entities(object):
 	chemical_plant = 'chemical-plant'
 	speed_1 = 'speed-module'
 	speed_3 = 'speed-module-3'
-	speed_module = speed_3
 	prod_1 = 'productivity-module'
 	prod_3 = 'productivity-module-3'
-	prod_module = prod_3
 	gear = 'iron-gear-wheel'
 	refinery = 'oil-refinery'
 	copper_wire = 'copper-cable'
