@@ -41,9 +41,26 @@ def circuit(rel_x, rel_y, color='green', port=1, target_port=1):
 # A mapping from easy internal names to official names
 class _Entities(object):
 	# guessed
-	radar = 'radar'
+	red_science = 'automation-science-pack'
+	green_science = 'logistic-science-pack'
+	black_science = 'military-science-pack'
+	blue_science = 'chemical-science-pack'
+	purple_science = 'production-science-pack'
+	yellow_science = 'utility-science-pack'
+	white_science = 'space-science-pack'
+	electric_engine = 'electric-engine-unit'
+	blue_circuit = 'processing-unit'
+	yellow_belt = 'transport-belt'
+	robot_frame = 'flying-robot-frame'
+	ammo = 'firearm-magazine'
+	piercing_ammo = 'piercing-rounds-magazine'
 
 	# checked
+	plastic = 'plastic-bar'
+	engine = 'engine-unit'
+	solid_fuel = 'solid-fuel-from-light-oil'
+	radar = 'radar'
+	wall = 'stone-wall'
 	underground_pipe = 'pipe-to-ground'
 	pipe = 'pipe'
 	pump = 'pump'
