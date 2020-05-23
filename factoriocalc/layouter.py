@@ -1,5 +1,6 @@
 
 import math
+import os
 from fractions import Fraction
 
 from . import primitives
@@ -458,8 +459,11 @@ def layout_process(step):
 			classify_items(step.process.outputs()),
 		)
 	except ValueError:
-		# TODO For now, silently ignore missing processor and provide dummy values
-		return Layout("dummy processor"), 9, 0
+		if os.environ.get("FACTORIOCALC_IGNORE_MISSING_PROCESS", ""):
+			# Silently ignore missing processor and provide dummy values
+			return Layout("dummy processor"), 9, 0
+		# Otherwise let it raise
+		raise
 	return processor.layout(step)
 
 
