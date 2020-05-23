@@ -56,7 +56,9 @@ class Processor(object):
 	"""
 	PROCESSORS = []
 	MATCH_CACHE = {} # this is here more for debugging than performance, it maps (building, inputs, outputs) -> processor
-	MAX_INSERT_RATE = 11.6 # worst case items/sec of stack inserter
+	# Worst case items/sec of stack inserter is 11.6 on full belts, but slower down the line when we get gaps.
+	# To give us some wiggle room, we take expected max insert rate as 10.
+	MAX_INSERT_RATE = 10
 
 	def __init__(self, name,
 		building='assembler',
