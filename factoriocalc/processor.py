@@ -102,7 +102,11 @@ class Processor(object):
 		underused = 0
 		# Check each thing in turn for not enough (always a no-match) or excess.
 		for have, need in ((self.outputs, outputs), (self.inputs, inputs)):
-			if have.liquid < need.liquid:
+			# If the liquid count does not match, then inputs will not be ordered correctly
+			# (liquids always come first, so if the liquids in the actual input != liquids
+			# in the process, the non-liquid inptus will be offset by the difference).
+			# We might be able to be clever about this later, but for now let's just reject.
+			if have.liquid != need.liquid:
 				return
 			unused += have.liquid - need.liquid
 			if have.belt < need.belt:
