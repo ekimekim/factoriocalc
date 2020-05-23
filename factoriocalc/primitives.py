@@ -72,7 +72,7 @@ class _Entities(object):
 	medium_pole = 'medium-electric-pole'
 	big_pole = 'big-electric-pole'
 	beacon = 'beacon'
-	inserter = 'stack-inserter'
+	ins = 'stack-inserter'
 	long_inserter = 'long-handed-inserter'
 	chest = 'steel-chest'
 	assembler = 'assembling-machine-3'

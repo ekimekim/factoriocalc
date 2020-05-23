@@ -55,7 +55,7 @@ class ArtEncoder(object):
 	EMPTY = ' '
 
 	ART = {
-		E.inserter: green([['i']]),
+		E.ins: green([['i']]),
 		E.assembler: yellow(boxed("A")),
 		E.furnace: blue(boxed("F")),
 		E.chemical_plant: blue(boxed("C")),
