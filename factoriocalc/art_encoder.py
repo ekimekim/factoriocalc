@@ -40,12 +40,12 @@ def splitter(obj):
 		'left': 'Ss',
 		'right': 'sS',
 	}.get(obj.attrs['output_priority'], 'ss')
+	if obj.orientation / 2 > 0:
+		s = s[::-1]
 	if obj.orientation % 2 == 0:
 		s = [list(s)]
 	else:
 		s = [[c] for c in s]
-	if obj.orientation / 2 > 0:
-		s = s[::-1]
 	return blue(s)
 
 class ArtEncoder(object):

@@ -281,14 +281,19 @@ def pipe_onramp_all(height):
 	)
 
 
-# Takes an incoming belt line from the bus and sends it to the left at y slot 1
+# Takes an incoming belt line from the bus and sends it to the left at y slot 1,
+# making sure it's right-packed. This strays outside our bounds a bit, but works
+# for now.
 #  v
-#  v
-#  v
+# Ss
+# >v
 #  <
 belt_to_left = Layout('belt to left',
-	(0, 0, belt(DOWN, 3)),
-	(0, 3, entity(E.belt, LEFT)),
+	(0, 0, belt(DOWN)),
+	(-1, 1, entity(E.splitter, DOWN, output_priority='right')),
+	(-1, 2, belt(RIGHT)),
+	(0, 2, belt(DOWN)),
+	(0, 3, belt(LEFT)),
 )
 
 
