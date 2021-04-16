@@ -15,10 +15,10 @@ from .util import is_liquid, UP, RIGHT, DOWN, LEFT, Layout, line_limit
 # The bus area available for a given step is from 2 above the processing area to 1 below.
 # Between 1 and 3 columns of padding is then added to keep beacons aligned to a multiple of 3.
 # We always add at least one padding as this is also the space we use to surface all the inputs/outputs.
-# Power is passed to process via a medium electric poll on the rightmost bus line top.
-# Visual: (b is beacon, e is substation, p is process, X is not allowed, + is optional padding, _ is usable)
+# Power is passed to process via a medium electric pole on the rightmost bus line top.
+# Visual: (b is beacon, o is power pole, p is process, X is not allowed, + is optional padding, _ is usable)
 #   XXXXXXXXXbbb
-#   _____e+++bbb
+#   _____o+++bbb
 #   ______+++bbb
 #   ______+++ppp
 #   ______+++ppp
@@ -52,16 +52,16 @@ from .util import is_liquid, UP, RIGHT, DOWN, LEFT, Layout, line_limit
 # Every 4th line (plus always the last) must include a medium power pole to carry power along the bus.
 # Liquids are pumped each step.
 # So a belt that isn't being used this step looks like this (left is top):
-#   e
+#   o
 #   >        <
-# Where e may or may not contain a pole.
+# Where o may or may not contain a pole.
 # A liquid pipe that isn't being used:
-#   e
+#   o
 #   pp>      <
 # where pp is a pump.
 # Note y slots 1-6 are still free.
 # A pipe or belt which is being used has this space to work with:
-#   e_________
+#   o_________
 #   __________
 # This gets in the way of the y-slot for 2 tiles, but we assume there'll never be
 # more than 4 of these in a row, so a blue underground belt can still pass under.
