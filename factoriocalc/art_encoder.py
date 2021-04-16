@@ -48,6 +48,26 @@ def splitter(obj):
 		s = [[c] for c in s]
 	return blue(s)
 
+def belt(obj):
+	return [[
+		{
+			0: '^',
+			1: '>',
+			2: 'v',
+			3: '<',
+		}[obj.orientation]
+	]]
+
+def underbelt(obj):
+	return [[
+		{
+			0: '∪',
+			1: '⊂',
+			2: '∩',
+			3: '⊃',
+		}[(obj.orientation + (2 if obj.attrs['type'] == 'input' else 0)) % 4]
+	]]
+
 class ArtEncoder(object):
 	"""Encodes a blueprint in a (lossy!) graphical representation in "ascii art"
 	(though not guarenteed to be 100% ascii). The intent is to aid in debugging
@@ -62,31 +82,15 @@ class ArtEncoder(object):
 		E.lab: white(boxed('L')),
 		E.refinery: green(boxed("R", n=5)), # oil drum
 		E.rocket_silo: boxed('S', n=9),
-		E.belt: lambda obj: blue([[
-			{
-				0: '^',
-				1: '>',
-				2: 'v',
-				3: '<',
-			}[obj.orientation]
-		]]),
-		E.underground_belt: lambda obj: blue([[
-			{
-				0: '∪',
-				1: '⊂',
-				2: '∩',
-				3: '⊃',
-			}[(obj.orientation + (2 if obj.attrs['type'] == 'input' else 0)) % 4]
-		]]),
-		E.red_underground_belt: lambda obj: red([[
-			{
-				0: '∪',
-				1: '⊂',
-				2: '∩',
-				3: '⊃',
-			}[(obj.orientation + (2 if obj.attrs['type'] == 'input' else 0)) % 4]
-		]]),
-		E.splitter: splitter,
+		E.belt: lambda obj: blue(belt(obj)),
+		E.red_belt: lambda obj: red(belt(obj)),
+		E.yellow_belt: lambda obj: yellow(belt(obj)),
+		E.underground_belt: lambda obj: blue(underbelt(obj)),
+		E.red_underground_belt: lambda obj: red(underbelt(obj)),
+		E.yellow_underground_belt: lambda obj: yellow(underbelt(obj)),
+		E.splitter: lambda obj: blue(splitter(obj)),
+		E.red_splitter: lambda obj: red(splitter(obj)),
+		E.yellow_splitter: lambda obj: yellow(splitter(obj)),
 		E.medium_pole: [['o']],
 		E.big_pole: [['\\', '/'], ['/', '\\']],
 		E.beacon: boxed('B'),
