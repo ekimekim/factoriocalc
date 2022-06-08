@@ -82,7 +82,11 @@ BUS_START_X = 4
 
 def layout(belt_type, beacon_module, steps, final_bus):
 	"""Converts a list of Placements and Compactions into
-	a collection of Primitives."""
+		a collection of Primitives.
+	belt_type must be 'blue', 'red', or 'yellow'. Even when not 'blue', blue underground
+		belts are used for distance.
+	beacon_module may be None to indicate no beacons. Gaps where they would go will be left.
+	"""
 	# Our main concerns in this top-level function are intra-row details:
 	# * Beacon widths (needs to cover the extremes of above and below rows)
 	# * Insert a roboport+radar line every 10 rows,
@@ -259,8 +263,9 @@ def layout_bus(belt_type, step, padding, process_base_x):
 
 def layout_beacons(beacon_module, width):
 	layout = Layout("beacons")
-	for x in range(int(math.ceil(width / 3.))):
-		layout.place(3*x, 0, primitives.beacon(beacon_module))
+	if beacon_module is not None:
+		for x in range(int(math.ceil(width / 3.))):
+			layout.place(3*x, 0, primitives.beacon(beacon_module))
 	return layout
 
 

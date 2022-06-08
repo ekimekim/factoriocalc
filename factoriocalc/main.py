@@ -50,8 +50,14 @@ def main(items,
 	items = _items
 
 	datafile = Datafile(data_path)
-	beacon_module = datafile.modules["speed {}".format(beacon_module_level)]
-	beacon_speed = beacon_module.speed # 2 modules in beacon, but each only has 50% effect
+	if beacon_module_level > 0:
+		beacon_module = datafile.modules["speed {}".format(beacon_module_level)]
+		beacon_speed = beacon_module.speed # 2 modules in beacon, but each only has 50% effect
+		beacon_module_name = beacon_module.name
+	else:
+		# no beacons
+		beacon_speed = 1
+		beacon_module_name = None
 	calculator = Calculator(
 		datafile,
 		stop_items,
@@ -96,7 +102,7 @@ def main(items,
 	v("Bus: {}".format(format_bus(manager.bus)))
 
 	v("=== Layouter stage ===")
-	l = layout(belt_type, beacon_module.name, manager.output, manager.bus)
+	l = layout(belt_type, beacon_module_name, manager.output, manager.bus)
 	v(l)
 
 	v("=== Flattener stage ===")
