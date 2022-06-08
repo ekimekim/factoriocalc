@@ -26,11 +26,13 @@ def comma_sep(arg):
 @arg('-s', '--stop-items', type=comma_sep)
 @arg('-m', '--modules', type=comma_sep)
 @arg('-b', '--beacon-module-level')
+@arg('--belt-type', choices=["blue", "red", "yellow"])
 def main(items,
 	data_path='./factorio_recipes',
 	stop_items=[],
 	modules=[],
 	beacon_module_level=3,
+	belt_type='blue',
 	show_conflicts=False,
 	verbose=False,
 ):
@@ -94,7 +96,7 @@ def main(items,
 	v("Bus: {}".format(format_bus(manager.bus)))
 
 	v("=== Layouter stage ===")
-	l = layout(beacon_module.name, manager.output, manager.bus)
+	l = layout(belt_type, beacon_module.name, manager.output, manager.bus)
 	v(l)
 
 	v("=== Flattener stage ===")

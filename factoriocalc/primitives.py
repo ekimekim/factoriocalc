@@ -109,6 +109,7 @@ def _underground_belt(orientation, io, color):
 	e = {
 		'blue': E.underground_belt,
 		'red': E.red_underground_belt,
+		'yellow': E.yellow_underground_belt,
 	}[color]
 	return entity(e, orientation, type=io)
 belt_to_ground = lambda o, type='blue': _underground_belt(o, 'input', type)
@@ -153,10 +154,15 @@ roboport_underpass_belt = Layout('roboport underpass belt',
 
 
 # Run a length of belt in the specified direction for specified length.
-def belt(orientation, length=1):
+def belt(orientation, length=1, type='blue'):
 	delta = orientation_to_vector(orientation)
+	e = {
+		'blue': E.belt,
+		'red': E.red_belt,
+		'yellow': E.yellow_belt,
+	}
 	return Layout("belt", *[
-		(i * delta.x, i * delta.y, entity(E.belt, orientation))
+		(i * delta.x, i * delta.y, entity(e, orientation))
 		for i in range(length)
 	])
 
@@ -206,18 +212,18 @@ def pipe_surface(orientation):
 #  v
 #  ...
 #  v
-def belt_offramp(y_slot):
+def belt_offramp(y_slot, type='blue'):
 	return Layout('belt offramp',
-		(0, 0, belt(DOWN, y_slot)),
+		(0, 0, belt(DOWN, y_slot, type=type)),
 		(0, y_slot, entity(E.splitter, DOWN, output_priority='right')),
-		(0, y_slot + 1, entity(E.belt, DOWN)),
+		(0, y_slot + 1, belt(DOWN, type=type)),
 		(1, y_slot + 1, belt_to_ground(DOWN)),
-		(0, y_slot + 2, entity(E.belt, RIGHT)),
+		(0, y_slot + 2, belt(RIGHT, type=type)),
 		(1, y_slot + 2, belt_to_ground(RIGHT)),
 		(1, y_slot + 3, belt_from_ground(DOWN)),
-		(0, y_slot + 4, entity(E.belt, DOWN)),
-		(1, y_slot + 4, entity(E.belt, LEFT)),
-		(0, y_slot + 5, belt(DOWN, 5 - y_slot)),
+		(0, y_slot + 4, belt(DOWN, type=type)),
+		(1, y_slot + 4, belt(LEFT, type=type)),
+		(0, y_slot + 5, belt(DOWN, 5 - y_slot, type=type)),
 	)
 
 
@@ -226,10 +232,10 @@ def belt_offramp(y_slot):
 #  ...
 #  v
 #  >⊃   y_slot
-def belt_offramp_all(y_slot):
+def belt_offramp_all(y_slot, type='blue'):
 	return Layout('belt offramp all',
-		(0, 0, belt(DOWN, y_slot + 2)),
-		(0, y_slot + 2, entity(E.belt, RIGHT)),
+		(0, 0, belt(DOWN, y_slot + 2, type=type)),
+		(0, y_slot + 2, belt(RIGHT, type=type)),
 		(1, y_slot + 2, belt_to_ground(RIGHT)),
 	)
 
@@ -267,9 +273,9 @@ def pipe_offramp_all(y_slot):
 #  v
 #  ...
 #  v
-def belt_onramp_all(height):
+def belt_onramp_all(height, type='blue'):
 	return Layout('belt onramp all',
-		(0, 0, belt(DOWN, height + 1)),
+		(0, 0, belt(DOWN, height + 1, type=type)),
 		(1, 0, belt_from_ground(LEFT)),
 	)
 
@@ -293,13 +299,14 @@ def pipe_onramp_all(height):
 # Ss
 # >v
 #  <
-belt_to_left = Layout('belt to left',
-	(0, 0, belt(DOWN)),
-	(-1, 1, entity(E.splitter, DOWN, output_priority='right')),
-	(-1, 2, belt(RIGHT)),
-	(0, 2, belt(DOWN)),
-	(0, 3, belt(LEFT)),
-)
+def belt_to_left(type='blue'):
+	return Layout('belt to left',
+		(0, 0, belt(DOWN, type=type)),
+		(-1, 1, entity(E.splitter, DOWN, output_priority='right')),
+		(-1, 2, belt(RIGHT, type=type)),
+		(0, 2, belt(DOWN, type=type)),
+		(0, 3, belt(LEFT, type=type)),
+	)
 
 
 # As belt_to_left but for pipes
@@ -307,13 +314,13 @@ belt_to_left = Layout('belt to left',
 #  =
 #  =
 #  =
-pipe_to_left = pipe(DOWN, 4)
+pipe_to_left = lambda: pipe(DOWN, 4)
 
 
 # Takes a belt from the left at bottom y slot and sends it down
 #  v
 #  v
-belt_from_left = belt(DOWN, 2)
+belt_from_left = lambda type='blue': belt(DOWN, 2, type=type)
 
 
 # As belt_from_left but for pipes
@@ -336,13 +343,14 @@ pipe_from_left = pipe(DOWN, 2)
 #  v
 #  v
 #  v
-compact_belts = Layout('compact belts',
-	(0, 0, belt(DOWN, 4)),
-	(1, 3, entity(E.belt, DOWN)),
-	(0, 4, entity(E.splitter, DOWN, input_priority='right', output_priority='right')),
-	(0, 5, belt(DOWN, 5)),
-	(1, 5, entity(E.belt, LEFT)),
-)
+def compact_belts(type='blue'):
+	return Layout('compact belts',
+		(0, 0, belt(DOWN, 4, type=type)),
+		(1, 3, belt(DOWN, type=type)),
+		(0, 4, entity(E.splitter, DOWN, input_priority='right', output_priority='right')),
+		(0, 5, belt(DOWN, 5, type=type)),
+		(1, 5, belt(LEFT, type=type)),
+	)
 
 
 # As belt_compact, but assume left output can't take everything and overflow
@@ -358,14 +366,15 @@ compact_belts = Layout('compact belts',
 #  vSs
 #  v<X -> outputs into X
 #  v
-compact_belts_with_overflow = Layout('compact belts with overflow',
-	(0, 0, belt(DOWN, 6)),
-	(1, 3, belt(DOWN, 3)),
-	(0, 6, entity(E.splitter, DOWN, input_priority='right', output_priority='right')),
-	(0, 7, belt(DOWN, 3)),
-	(1, 7, entity(E.splitter, DOWN, output_priority='right')),
-	(1, 8, entity(E.belt, LEFT)),
-)
+def compact_belts_with_overflow(type='blue'):
+	return Layout('compact belts with overflow',
+		(0, 0, belt(DOWN, 6, type=type)),
+		(1, 3, belt(DOWN, 3, type=type)),
+		(0, 6, entity(E.splitter, DOWN, input_priority='right', output_priority='right')),
+		(0, 7, belt(DOWN, 3, type=type)),
+		(1, 7, entity(E.splitter, DOWN, output_priority='right')),
+		(1, 8, belt(LEFT, type=type)),
+	)
 
 
 # Join two pipes, with the right incoming on y_slot 1

@@ -80,7 +80,7 @@ from .util import is_liquid, UP, RIGHT, DOWN, LEFT, Layout, line_limit
 BUS_START_X = 4
 
 
-def layout(beacon_module, steps, final_bus):
+def layout(belt_type, beacon_module, steps, final_bus):
 	"""Converts a list of Placements and Compactions into
 	a collection of Primitives."""
 	# Our main concerns in this top-level function are intra-row details:
@@ -103,14 +103,14 @@ def layout(beacon_module, steps, final_bus):
 	for step in steps:
 		# If previous step was oversize, extend the bus to compensate.
 		if oversize:
-			layout.place(0, base_y, layout_bus_extension(step.bus, oversize))
+			layout.place(0, base_y, layout_bus_extension(belt_type, step.bus, oversize))
 			base_y += oversize
 			height_since_roboports += oversize
 
 		# Step layout doesn't actually depend on exactly where step will be placed,
 		# and lets us work out width and height immediately.
 		# Note oversize is carried across to next loop iteration.
-		step_layout, beacon_start, beacon_end, oversize = layout_step(step)
+		step_layout, beacon_start, beacon_end, oversize = layout_step(belt_type, step)
 
 		# Check if we need roboport row, ie. if this step would extend past the end of roboport area.
 		if height_since_roboports + STEP_SIZE + oversize > ROBOPORT_AREA_SIZE:
@@ -141,7 +141,7 @@ def layout(beacon_module, steps, final_bus):
 
 	# check if last row was oversize
 	if oversize:
-		layout.place(0, base_y, layout_bus_extension(final_bus, oversize))
+		layout.place(0, base_y, layout_bus_extension(belt_type, final_bus, oversize))
 		base_y += oversize
 		height_since_roboports += oversize
 
@@ -159,7 +159,7 @@ def layout(beacon_module, steps, final_bus):
 	return layout
 
 
-def layout_step(step):
+def layout_step(belt_type, step):
 	"""Layout given step with y value of the top of the processing area being y=0.
 	Returns:
 		layout
@@ -178,7 +178,7 @@ def layout_step(step):
 	process_base_x = bus_width + BUS_START_X + padding
 	assert process_base_x % 3 == 0
 
-	layout.place(0, 0, layout_bus(step, padding, process_base_x))
+	layout.place(0, 0, layout_bus(belt_type, step, padding, process_base_x))
 	if isinstance(step, Placement):
 		process_layout, process_width, oversize = layout_process(step)
 		layout.place(process_base_x, 0, process_layout)
@@ -190,7 +190,7 @@ def layout_step(step):
 	return layout, process_base_x, process_end, oversize
 
 
-def layout_bus_extension(bus, size):
+def layout_bus_extension(belt_type, bus, size):
 	"""Layout an extension that carries the bus SIZE units downwards,
 	to bridge the gap between the previous step's oversize layout and this step."""
 	layout = Layout("bus extension")
@@ -198,13 +198,13 @@ def layout_bus_extension(bus, size):
 		if line is None:
 			continue
 		bus_x = BUS_START_X + 2 * bus_pos
-		primitive_fn = primitives.pipe if is_liquid(line.item) else primitives.belt
+		primitive_fn = primitives.pipe if is_liquid(line.item) else lambda o, l: primitives.belt(o, l, type=belt_type)
 		primitive = primitive_fn(DOWN, size)
 		layout.place(bus_x, -2, primitive)
 	return layout
 
 
-def layout_bus(step, padding, process_base_x):
+def layout_bus(belt_type, step, padding, process_base_x):
 	"""Layout the bus area for the given step. This includes:
 	* Running power along the bus
 	* Running unused lines through to the step below
@@ -228,10 +228,10 @@ def layout_bus(step, padding, process_base_x):
 
 	# input/output lines, or compaction lines
 	if isinstance(step, Placement):
-		in_outs, forbidden_pump_indexes = layout_in_outs(step, padding, process_base_x)
+		in_outs, forbidden_pump_indexes = layout_in_outs(belt_type, step, padding, process_base_x)
 		layout.place(0, 0, in_outs)
 	else:
-		layout.place(0, 0, layout_compaction(step))
+		layout.place(0, 0, layout_compaction(belt_type, step))
 		forbidden_pump_indexes = []
 
 	# underpasses and power poles
@@ -264,7 +264,7 @@ def layout_beacons(beacon_module, width):
 	return layout
 
 
-def layout_in_outs(step, padding, process_base_x):
+def layout_in_outs(belt_type, step, padding, process_base_x):
 	"""Return the parts needed to connect inputs and outputs
 	from the bus to the process. Also returns a list of bus indexes
 	which y_slot 0 is occupying, so that layout_bus() can avoid putting pumps there.
@@ -339,7 +339,7 @@ def layout_in_outs(step, padding, process_base_x):
 			)
 			# then fill remaining space with belts
 			for i in range(1, padding):
-				sub_layout.place(i, 0, primitives.belt(orientation, 1))
+				sub_layout.place(i, 0, primitives.belt(orientation, 1, type=belt_type))
 		return sub_layout
 
 	# inputs (off-ramps and right-running lines)
@@ -350,8 +350,8 @@ def layout_in_outs(step, padding, process_base_x):
 		line_ends = line.throughput == step.process.inputs()[line.item]
 		# map from (liquid, ends) to primitive func to call as f(y_slot)
 		primitive = {
-			(False, False): primitives.belt_offramp,
-			(False, True): primitives.belt_offramp_all,
+			(False, False): lambda y_slot: primitives.belt_offramp(y_slot, type=belt_type),
+			(False, True): lambda y_slot: primitives.belt_offramp_all(y_slot, type=belt_type),
 			(True, False): primitives.pipe_ramp,
 			(True, True): primitives.pipe_offramp_all,
 		}[is_liquid(line.item), line_ends](y_slot)
@@ -369,7 +369,7 @@ def layout_in_outs(step, padding, process_base_x):
 		primitive = (
 			primitives.pipe_onramp_all(7 - y_slot)
 			if is_liquid(item) else
-			primitives.belt_onramp_all(7 - y_slot)
+			primitives.belt_onramp_all(7 - y_slot, type=belt_type)
 		)
 		# place the on-ramp
 		layout.place(bus_x, y_slot, primitive)
@@ -381,7 +381,7 @@ def layout_in_outs(step, padding, process_base_x):
 	return layout, forbidden_pump_indexes
 
 
-def layout_compaction(step):
+def layout_compaction(belt_type, step):
 	"""Return the layout needed to perform the compactions and shifts."""
 	layout = Layout("compaction")
 	bus_x = lambda index: BUS_START_X + 2 * index
@@ -395,9 +395,9 @@ def layout_compaction(step):
 	for left, right in step.compactions:
 		right_ends = step.bus[left].throughput + step.bus[right].throughput <= line_limit(step.bus[left].item)
 		liquid = is_liquid(step.bus[left].item)
-		pipe_or_belt = primitives.pipe if liquid else primitives.belt
+		pipe_or_belt = primitives.pipe if liquid else lambda o, l=1: primitives.belt(o, l, type=belt_type)
 		# right top part
-		layout.place(bus_x(right), -2, primitives.pipe_to_left if liquid else primitives.belt_to_left)
+		layout.place(bus_x(right), -2, primitives.pipe_to_left if liquid else primitives.belt_to_left(belt_type))
 		# right to left line
 		line_right = bus_x(right) - 1
 		line_left = bus_x(left) + 2
@@ -409,7 +409,7 @@ def layout_compaction(step):
 				raise NotImplementedError("Compaction with overflow for fluids is not implemented")
 			primitive = primitives.compact_pipe
 		else:
-			primitive = primitives.compact_belts if right_ends else primitives.compact_belts_with_overflow
+			primitive = primitives.compact_belts(belt_type) if right_ends else primitives.compact_belts_with_overflow(belt_type)
 		layout.place(bus_x(left), -2, primitive)
 		# if no overflow, we're done
 		if right_ends:
@@ -417,14 +417,14 @@ def layout_compaction(step):
 		# overflow left back to right
 		layout.place(line_left, 6, pipe_or_belt(RIGHT, line_right - line_left + 1))
 		# right bottom part
-		layout.place(bus_x(right), 6, primitives.pipe_from_left if liquid else primitives.belt_from_left)
+		layout.place(bus_x(right), 6, primitives.pipe_from_left if liquid else primitives.belt_from_left(belt_type))
 
 	# shifts. note we assume source is to the right of dest
 	for right, left in step.shifts:
 		liquid = is_liquid(step.bus[right].item)
-		pipe_or_belt = primitives.pipe if liquid else primitives.belt
+		pipe_or_belt = primitives.pipe if liquid else lambda o, l=1: primitives.belt(o, l, type=belt_type)
 		# right part
-		layout.place(bus_x(right), -2, primitives.pipe_to_left if liquid else primitives.belt_to_left)
+		layout.place(bus_x(right), -2, primitives.pipe_to_left if liquid else primitives.belt_to_left(belt_type))
 		# right to left line
 		line_right = bus_x(right) - 1
 		line_left = bus_x(left) + 1
