@@ -139,14 +139,14 @@ class Calculator(object):
 		to be solved for.
 
 		For clarity, these are the recipes considered:
-			adv oil processing: 100c+50w -> 10h+45l+55p
+			adv oil processing: 100c+50w -> 25h+45l+55p
 			heavy cracking: 40h+30w -> 30l
 			light cracking: 30l+30w -> 20p
 		If we have excess products, we include a raw output for a negative amount of it
 		to indicate to the user that it must be dealt with in some external way.
 		"""
 
-		HEAVY_PER_PROCESS, LIGHT_PER_PROCESS, PETROL_PER_PROCESS = 10, 45, 55
+		HEAVY_PER_PROCESS, LIGHT_PER_PROCESS, PETROL_PER_PROCESS = 25, 45, 55
 
 		refinery_recipe = self.datafile.recipes['oil products']
 		refinery_recipe = self.datafile.resolve_recipe(refinery_recipe, self.module_priorities, self.oil_beacon_speed)
