@@ -39,7 +39,7 @@ def splitter(obj):
 	s = {
 		'left': 'Ss',
 		'right': 'sS',
-	}.get(obj.attrs['output_priority'], 'ss')
+	}.get(obj.attrs.get('output_priority'), 'ss')
 	if obj.orientation / 2 > 0:
 		s = s[::-1]
 	if obj.orientation % 2 == 0:

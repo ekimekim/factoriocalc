@@ -34,10 +34,10 @@ def main(items,
 	beacon_module_level=3,
 	belt_type='blue',
 	show_conflicts=False,
-	verbose=False,
+	verbose=0,
 ):
-	def v(s):
-		if verbose:
+	def v(n, s):
+		if verbose >= n:
 			print s
 
 	_items = {}
@@ -66,51 +66,51 @@ def main(items,
 		oil_beacon_speed=12*beacon_speed, # double-row of beacons
 	)
 
-	v("=== Calculator stage ===")
+	v(2, "=== Calculator stage ===")
 	processes = calculator.solve_with_oil(items)
 	for name, process in processes.items():
-		v("{}: {}".format(name, process))
+		v(2, "{}: {}".format(name, process))
 
-	v("=== Step breakdown stage ===")
+	v(1, "=== Step breakdown stage ===")
 	steps, inputs = split_into_steps(processes)
-	v("Inputs:")
+	v(1, "Inputs:")
 	for process in inputs:
-		v(process)
-	v("Steps:")
+		v(1, process)
+	v(1, "Steps:")
 	for process in steps:
-		v(process)
+		v(1, process)
 
-	v("=== Belt manager stage ===")
+	v(1, "=== Belt manager stage ===")
 	manager = BeltManager(steps, inputs)
 	manager.run()
 	for step in manager.output:
-		v("Bus: {}".format(format_bus(step.bus)))
+		v(2, "Bus: {}".format(format_bus(step.bus)))
 		if isinstance(step, Placement):
-			v("{}: {} -> {}".format(
+			v(1, "{}: {} -> {}".format(
 				step.process,
 				", ".join(map(str, sorted(step.inputs.keys()))),
 				", ".join(map(str, sorted(step.outputs.keys()))),
 			))
 		elif isinstance(step, Compaction):
-			v("Compact {}".format(", ".join([
+			v(1, "Compact {}".format(", ".join([
 				"{} into {}".format(s, d) for d, s in step.compactions
 			] + [
 				"{} becomes {}".format(s, d) for s, d in step.shifts
 			])))
 		else:
-			v(step)
-	v("Bus: {}".format(format_bus(manager.bus)))
+			v(1, step)
+	v(1, "Final Bus: {}".format(format_bus(manager.bus)))
 
-	v("=== Layouter stage ===")
+	v(3, "=== Layouter stage ===")
 	l = layout(belt_type, beacon_module_name, manager.output, manager.bus)
-	v(l)
+	v(3, l)
 
-	v("=== Flattener stage ===")
+	v(3, "=== Flattener stage ===")
 	entities = l.flatten()
 	for pos, e in entities:
-		v("{}, {}: {}".format(pos.x, pos.y, e))
+		v(3, "{}, {}: {}".format(pos.x, pos.y, e))
 
-	v("=== Encoder stage ===")
+	v(1, "=== Encoder stage ===")
 	print ArtEncoder(error_on_conflict = not show_conflicts).encode(entities)
 	print
 	print blueprint.encode(entities)

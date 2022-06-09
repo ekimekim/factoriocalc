@@ -27,6 +27,8 @@ entity_sizes = {
 	E.chemical_plant: x3,
 	E.lab: x3,
 	E.splitter: (2, 1),
+	E.red_splitter: (2, 1),
+	E.yellow_splitter: (2, 1),
 	E.roboport: x4,
 	E.furnace: x3,
 	E.refinery: x5,
@@ -136,6 +138,7 @@ def lossy_decode_entity(entity):
 	), Entity(
 		entity['name'],
 		orientation,
+		[],
 		attrs,
 	)
 

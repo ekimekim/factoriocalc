@@ -154,9 +154,9 @@ Pumpjack takes 5 in assembler, 5 green circuit, 10 gear, 10 pipe, 5 steel plate
 Stone furnace takes 0.5 in assembler, 5 stone
 Steel furnace takes 3 in assembler, 6 steel plate, 10 stone brick
 Electric furnace takes 5 in assembler, 5 red circuit, 10 steel plate, 10 stone brick
-Assembly machine 1 takes 0.5 in assembler, 3 green circuit, 5 gear, 9 iron plate
-Assembly machine 2 takes 0.5 in assembler, 1 assembly machine 1, 3 green circuit, 5 gear, 2 steel plate
-Assembly machine 3 takes 0.5 in assembler, 2 assembly machine 2, 4 speed module
+Assembling machine 1 takes 0.5 in assembler, 3 green circuit, 5 gear, 9 iron plate
+Assembling machine 2 takes 0.5 in assembler, 1 assembling machine 1, 3 green circuit, 5 gear, 2 steel plate
+Assembling machine 3 takes 0.5 in assembler, 2 assembling machine 2, 4 speed module
 Oil refinery takes 10 in assembler, 10 green circuit, 10 gear, 10 pipe, 15 steel plate, 10 stone brick
 Chemical plant takes 5 in assembler, 5 green circuit, 5 gear, 5 pipe, 5 steel plate
 Centrifuge takes 4 in assembler, 100 red circuit, 100 concrete, 100 gear, 50 steel plate
