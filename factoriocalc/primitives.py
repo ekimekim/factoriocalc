@@ -224,7 +224,7 @@ def pipe_surface(orientation):
 def belt_offramp(y_slot, type='blue'):
 	return Layout('belt offramp',
 		(0, 0, belt(DOWN, y_slot, type=type)),
-		(0, y_slot, entity(E.splitter, DOWN, output_priority='right')),
+		(0, y_slot, splitter(DOWN, output_priority='right', type=type)),
 		(0, y_slot + 1, belt(DOWN, type=type)),
 		(1, y_slot + 1, belt_to_ground(DOWN)),
 		(0, y_slot + 2, belt(RIGHT, type=type)),
@@ -311,7 +311,7 @@ def pipe_onramp_all(height):
 def belt_to_left(type='blue'):
 	return Layout('belt to left',
 		(0, 0, belt(DOWN, type=type)),
-		(-1, 1, entity(E.splitter, DOWN, output_priority='right')),
+		(-1, 1, splitter(DOWN, output_priority='right', type=type)),
 		(-1, 2, belt(RIGHT, type=type)),
 		(0, 2, belt(DOWN, type=type)),
 		(0, 3, belt(LEFT, type=type)),
@@ -356,7 +356,7 @@ def compact_belts(type='blue'):
 	return Layout('compact belts',
 		(0, 0, belt(DOWN, 4, type=type)),
 		(1, 3, belt(DOWN, type=type)),
-		(0, 4, entity(E.splitter, DOWN, input_priority='right', output_priority='right')),
+		(0, 4, splitter(DOWN, input_priority='right', output_priority='right', type=type)),
 		(0, 5, belt(DOWN, 5, type=type)),
 		(1, 5, belt(LEFT, type=type)),
 	)
@@ -379,9 +379,9 @@ def compact_belts_with_overflow(type='blue'):
 	return Layout('compact belts with overflow',
 		(0, 0, belt(DOWN, 6, type=type)),
 		(1, 3, belt(DOWN, 3, type=type)),
-		(0, 6, entity(E.splitter, DOWN, input_priority='right', output_priority='right')),
+		(0, 6, splitter(DOWN, input_priority='right', output_priority='right', type=type)),
 		(0, 7, belt(DOWN, 3, type=type)),
-		(1, 7, entity(E.splitter, DOWN, output_priority='right')),
+		(1, 7, splitter(DOWN, output_priority='right', type=type)),
 		(1, 8, belt(LEFT, type=type)),
 	)
 

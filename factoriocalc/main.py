@@ -20,6 +20,8 @@ def format_bus(bus):
 
 
 def comma_sep(arg):
+	if arg == '':
+		return []
 	return [part.lower() for part in arg.split(',')]
 
 
@@ -30,7 +32,7 @@ def comma_sep(arg):
 def main(items,
 	data_path='./factorio_recipes',
 	stop_items=[],
-	modules=[],
+	modules=None,
 	beacon_module_level=3,
 	belt_type='blue',
 	show_conflicts=False,
@@ -61,7 +63,7 @@ def main(items,
 	calculator = Calculator(
 		datafile,
 		stop_items,
-		module_priorities=modules if modules else Calculator.DEFAULT_MODS,
+		module_priorities=modules if modules is not None else Calculator.DEFAULT_MODS,
 		beacon_speed=8*beacon_speed, # double-row of beacons
 		oil_beacon_speed=12*beacon_speed, # double-row of beacons
 	)
@@ -72,7 +74,7 @@ def main(items,
 		v(2, "{}: {}".format(name, process))
 
 	v(1, "=== Step breakdown stage ===")
-	steps, inputs = split_into_steps(processes)
+	steps, inputs = split_into_steps(processes, belt_type=belt_type)
 	v(1, "Inputs:")
 	for process in inputs:
 		v(1, process)
