@@ -46,7 +46,7 @@ def splitter(obj):
 		s = [list(s)]
 	else:
 		s = [[c] for c in s]
-	return blue(s)
+	return s
 
 def belt(obj):
 	return [[

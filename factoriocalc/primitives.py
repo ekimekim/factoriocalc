@@ -167,6 +167,15 @@ def belt(orientation, length=1, type='blue'):
 	])
 
 
+def splitter(orientation, type='blue', **attrs):
+	e = {
+		'blue': E.splitter,
+		'red': E.red_splitter,
+		'yellow': E.yellow_splitter,
+	}[type]
+	return entity(e, orientation, **attrs)
+
+
 # As belt(), but for pipes
 def pipe(orientation, length=1):
 	delta = orientation_to_vector(orientation)

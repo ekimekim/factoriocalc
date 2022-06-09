@@ -94,7 +94,7 @@ inserter takes 0.5 in assembler, 1 green circuit, 1 gear, 1 iron plate
 long handed inserter takes 0.5 in assembler, 1 inserter, 1 gear, 1 iron plate
 fast inserter takes 0.5 in assembler, 2 green circuit, 1 inserter, 2 iron plate
 filter inserter takes 0.5 in assembler, 4 green circuit, 1 fast inserter
-stack inserter takes 0.5 in assembler, 1 red circuit, 15 green circuit, 1 blue circuit, 15 gear
+stack inserter takes 0.5 in assembler, 1 red circuit, 15 green circuit, 1 fast inserter, 15 gear
 stack filter inserter takes 0.5 in assembler, 5 green circuit, 1 stack inserter
 2 small electric pole takes 0.5 in assembler, 2 copper wire, 1 wood
 medium electric pole takes 0.5 in assembler, 2 copper plate, 4 iron stick, 2 steel plate

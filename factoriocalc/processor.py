@@ -1,5 +1,6 @@
 # -encoding: utf-8-
 
+import functools
 import math
 import os
 from collections import namedtuple, Counter
@@ -70,8 +71,10 @@ class Processor(object):
 		oversize=0,
 	):
 		"""Most args are self-evident, see main docstring.
-		head, body and tail may be callable, in which case they take, as an arg,
-		a primitive representing the production building of the recipe.
+		head, body and tail may be callable, in which case they take, as args:
+			- a primitive representing the production building of the recipe
+			- a specialized version of primitives.belt with type set
+			- a specialized version of primitives.splitter with type set
 		Building may be an iterable listing all supported buildings (this only makes
 		sense when using the callable-body feature).
 		A process may be oversize, giving it a between-beacons height of 7 + oversize.
@@ -178,9 +181,11 @@ class Processor(object):
 		buildings -= self.base_buildings
 		return max(0, int(math.ceil(buildings / self.per_body_buildings)))
 
-	def resolve_layout(self, building, layout):
+	def resolve_layout(self, building, belt_type, layout):
+		belt = functools.partial(primitives.belt, type=belt_type)
+		splitter = functools.partial(primitives.splitter, type=belt_type)
 		if callable(layout):
-			return layout(building)
+			return layout(building, belt, splitter)
 		return layout
 
 	def get_building_primitive(self, recipe):
@@ -197,19 +202,19 @@ class Processor(object):
 			}
 		return entity(E[recipe.building.name], **attrs)
 
-	def layout(self, step):
+	def layout(self, belt_type, step):
 		"""Returns (layout, width, oversize) for the given step, which must already be matching."""
 		building = self.get_building_primitive(step.process.recipe)
 		layout = Layout("process: {}".format(self.name))
-		layout.place(0, 0, self.resolve_layout(building, self.head))
-		body = self.resolve_layout(building, self.body)
+		layout.place(0, 0, self.resolve_layout(building, belt_type, self.head))
+		body = self.resolve_layout(building, belt_type, self.body)
 		bodies = self.determine_bodies(step)
 		for i in range(bodies):
 			layout.place(self.head_width + i * self.body_width, 0, body)
 		layout.place(
 			self.head_width + bodies * self.body_width,
 			0,
-			self.resolve_layout(building, self.tail)
+			self.resolve_layout(building, belt_type, self.tail)
 		)
 		return layout, self.head_width + bodies * self.body_width + self.tail_width, self.oversize
 
@@ -251,32 +256,31 @@ Processor('1 -> 1',
 	per_body_buildings=2,
 	# head: Connect y=1 into body at y=0 and y=6 out of body at y=6
 	head_width=4,
-	head=Layout('head',
-		(1, 0, primitives.belt(RIGHT, 3)),
-		(0, 1, primitives.entity(E.belt, RIGHT)),
-		(1, 1, primitives.entity(E.belt, UP)),
+	head=lambda building, belt, splitter: Layout('head',
+		(0, 1, belt(RIGHT)),
+		(1, 1, belt(UP)),
+		(1, 0, belt(RIGHT, 3)),
 		(2, 1, primitives.medium_pole),
 		(2, 5, primitives.medium_pole),
-		(0, 6, primitives.entity(E.belt, LEFT)),
-		(3, 6, primitives.belt(LEFT, 3)),
+		(3, 6, belt(LEFT, 4)),
 	),
 	# body: couldn't be simpler. just a pair of assemblers with inserters and sharing
 	# power poles on each side
 	body_width=6,
-	body=lambda building: Layout('body',
-		(0, 0, primitives.belt(RIGHT, 6)),
+	body=lambda building, belt, splitter: Layout('body',
+		(0, 0, belt(RIGHT, 6)),
 		(0, 1, entity(E.ins, UP)),
 		(2, 1, primitives.medium_pole),
 		(3, 1, entity(E.ins, UP)),
 		(0, 2, building),
 		(3, 2, building),
-		(0, 5, entity(E.belt, DOWN)),
-		(1, 5, entity(E.splitter, LEFT, output_priority='right')),
+		(0, 5, belt(DOWN)),
+		(1, 5, splitter(LEFT, output_priority='right')),
 		(2, 5, entity(E.ins, UP)),
 		(3, 5, primitives.medium_pole),
 		(4, 5, entity(E.ins, UP)),
-		(0, 6, entity(E.belt, LEFT)),
-		(5, 6, primitives.belt(LEFT, 4)),
+		(0, 6, belt(LEFT)),
+		(5, 6, belt(LEFT, 4)),
 	),
 	# note tail goes a bit wider than the last thing put down, so that there's enough beacons
 	tail_width=3,
@@ -300,7 +304,7 @@ Processor('oil refining',
 	# head: Shuffle all the input and output pipes from their initial positions
 	# to the ones that the body uses, then do the first body but with some special casing.
 	head_width=18,
-	head=lambda building: Layout('head',
+	head=lambda building, belt, splitter: Layout('head',
 		(0, 0, entity('medium-electric-pole', UP)),
 		(0, 1, entity('pipe-to-ground', LEFT)),
 		(0, 2, entity('pipe-to-ground', LEFT)),
@@ -366,7 +370,7 @@ Processor('oil refining',
 	# body: Refinery is placed horizontally, with each liquid running on its own row
 	# one row above or below its input or output position.
 	body_width=10,
-	body=lambda building: Layout('body',
+	body=lambda building, belt, splitter: Layout('body',
 		(0, 1, entity('pipe-to-ground', RIGHT)),
 		(0, 2, entity('pipe-to-ground', LEFT)),
 		(0, 5, entity('pipe-to-ground', RIGHT)),
@@ -428,24 +432,24 @@ Processor('2 + half -> half',
 	# In order to power first body's left side inserters, the pole covering
 	# the bottom beacons is almost halfway up.
 	head_width=4,
-	head=Layout('head',
+	head=lambda building, belt, splitter: Layout('head',
 		# poles
 		(0, 0, primitives.medium_pole),
 		(2, 4, primitives.medium_pole),
 		# first input
 		(0, 1, primitives.belt_to_ground(RIGHT)),
 		(2, 1, primitives.belt_from_ground(RIGHT)),
-		(3, 1, primitives.belt(UP)),
-		(3, 0, primitives.belt(RIGHT)),
+		(3, 1, belt(UP)),
+		(3, 0, belt(RIGHT)),
 		# second input
 		(0, 2, primitives.belt_to_ground(RIGHT)),
 		(2, 2, primitives.belt_from_ground(RIGHT)),
-		(3, 2, primitives.belt(DOWN, 4)),
-		(3, 6, primitives.belt(RIGHT)),
+		(3, 2, belt(DOWN, 4)),
+		(3, 6, belt(RIGHT)),
 		# third input
-		(0, 3, primitives.belt(RIGHT)),
-		(1, 3, primitives.belt(UP, 3)),
-		(1, 0, primitives.belt(RIGHT)),
+		(0, 3, belt(RIGHT)),
+		(1, 3, belt(UP, 3)),
+		(1, 0, belt(RIGHT)),
 		(2, 0, primitives.belt_to_ground(RIGHT, type='red')),
 		# output
 		(0, 6, primitives.belt_from_ground(LEFT, type='red')),
@@ -455,7 +459,7 @@ Processor('2 + half -> half',
 	# However, this leaves no room for power poles. We can just manage to reach all inserters
 	# by putting power poles on every second pair of assemblers.
 	body_width=12,
-	body=lambda building: Layout('body',
+	body=lambda building, belt, splitter: Layout('body',
 		# assemblers
 		(0, 2, building),
 		(3, 2, building),
@@ -500,12 +504,12 @@ Processor('2 + half -> half',
 		(9, 0, primitives.belt_to_ground(RIGHT, type='red')),
 		# Output
 		(10, 6, primitives.belt_from_ground(LEFT, type='red')),
-		(9, 6, primitives.belt(LEFT, 2)),
+		(9, 6, belt(LEFT, 2)),
 		(7, 6, primitives.belt_to_ground(LEFT, type='red')),
 		(4, 6, primitives.belt_from_ground(LEFT, type='red')),
-		(3, 5, entity(E.splitter, LEFT, output_priority='right')),
-		(2, 5, primitives.belt(DOWN)),
-		(2, 6, primitives.belt(LEFT)),
+		(3, 5, splitter(LEFT, output_priority='right')),
+		(2, 5, belt(DOWN)),
+		(2, 6, belt(LEFT)),
 		(1, 6, primitives.belt_to_ground(LEFT, type='red')),
 	),
 	# note tail goes a bit wider than the last thing put down, so that there's enough beacons
@@ -540,47 +544,40 @@ Processor('2 -> 1',
 	# In order to power first body's left side inserters, the pole covering
 	# the tom/bottom beacons is almost halfway up.
 	head_width=4,
-	head=Layout('head',
+	head=lambda building, belt, splitter: Layout('head',
 		# poles
 		(0, 0, primitives.medium_pole),
 		(2, 2, primitives.medium_pole),
 		# first input
 		(0, 1, primitives.belt_to_ground(RIGHT)),
 		(2, 1, primitives.belt_from_ground(RIGHT)),
-		(3, 1, primitives.belt(UP)),
-		(3, 0, primitives.belt(RIGHT)),
+		(3, 1, belt(UP)),
+		(3, 0, belt(RIGHT)),
 		# second input
-		(0, 2, primitives.belt(RIGHT)),
-		(1, 2, primitives.belt(DOWN)),
-		(1, 3, primitives.belt(RIGHT, 2)),
-		(3, 3, primitives.belt(DOWN, 3)),
-		(3, 6, primitives.belt(RIGHT)),
+		(0, 2, belt(RIGHT)),
+		(1, 2, belt(DOWN)),
+		(1, 3, belt(RIGHT, 2)),
+		(3, 3, belt(DOWN, 3)),
+		(3, 6, belt(RIGHT)),
 		# top output
 		(2, 0, primitives.belt_from_ground(LEFT, type='red')),
-		(1, 0, primitives.belt(DOWN)),
+		(1, 0, belt(DOWN)),
 		(1, 1, primitives.belt_to_ground(DOWN, type='red')),
 		(1, 4, primitives.belt_from_ground(DOWN, type='red')),
 		# bottom output
 		(2, 6, primitives.belt_from_ground(LEFT, type='red')),
-		(1, 6, primitives.belt(UP)),
+		(1, 6, belt(UP)),
 		# combined output
-		(1, 5, primitives.belt(LEFT)),
-		(0, 5, primitives.belt(DOWN)),
-		(0, 6, primitives.belt(LEFT)),
+		(1, 5, belt(LEFT)),
+		(0, 5, belt(DOWN)),
+		(0, 6, belt(LEFT)),
 	),
 	# body: Alternate the two underground belt types so we can insert to/from both.
 	# We need to re-balance the red belt since we need to use both sides.
 	# We can just manage to reach all inserters
 	# by putting power poles on every second pair of assemblers.
 	body_width=12,
-#   vↄ>|⊃c<sↄ⊂⊃ cↄ ⊂|
-#  ⊃u⊂^|ii^S iioi oi| o
-#  >vo |┌─┐┌─┐┌─┐┌─┐|
-#   >>v|│A││A││A││A│|
-#   nov|└─┘└─┘└─┘└─┘|
-#  v< v|i vSiiio ioi| o
-#  <^ↄ>|⊃c<sↄ⊂⊃ cↄ ⊂|
-body=lambda building: Layout('body',
+	body=lambda building, belt, splitter: Layout('body',
 		# assemblers
 		(0, 2, building),
 		(3, 2, building),
@@ -618,17 +615,17 @@ body=lambda building: Layout('body',
 		(9, 0, primitives.belt_from_ground(LEFT, type='red')),
 		(8, 0, primitives.belt_to_ground(LEFT, type='red')),
 		(4, 0, primitives.belt_from_ground(LEFT, type='red')),
-		(3, 0, entity(E.splitter, LEFT, output_priority='left')),
-		(2, 1, primitives.belt(UP)),
-		(2, 0, primitives.belt(LEFT)),
+		(3, 0, splitter(LEFT, output_priority='left')),
+		(2, 1, belt(UP)),
+		(2, 0, belt(LEFT)),
 		(1, 0, primitives.belt_to_ground(LEFT, type='red')),
 		# Bottom output
 		(9, 6, primitives.belt_from_ground(LEFT, type='red')),
 		(8, 6, primitives.belt_to_ground(LEFT, type='red')),
 		(4, 6, primitives.belt_from_ground(LEFT, type='red')),
-		(3, 5, entity(E.splitter, LEFT, output_priority='right')),
-		(2, 5, primitives.belt(DOWN)),
-		(2, 6, primitives.belt(LEFT)),
+		(3, 5, splitter(LEFT, output_priority='right')),
+		(2, 5, belt(DOWN)),
+		(2, 6, belt(LEFT)),
 		(1, 6, primitives.belt_to_ground(LEFT, type='red')),
 	),
 	# note tail goes a bit wider than the last thing put down, so that there's enough beacons
@@ -661,32 +658,32 @@ Processor('3x half -> full',
 	# on the off chance the inserter becomes a bottleneck, since it only needs)
 	# to insert one input instead of 2). Put the other two together.
 	head_width=4,
-	head=Layout('head',
+	head=lambda building, belt, splitter: Layout('head',
 		# poles
 		(3, 1, primitives.medium_pole),
 		(3, 5, primitives.medium_pole),
 		# first input
-		(0, 1, primitives.belt(UP)),
-		(0, 0, primitives.belt(RIGHT)),
+		(0, 1, belt(UP)),
+		(0, 0, belt(RIGHT)),
 		(1, 0, primitives.belt_to_ground(RIGHT, type='red')),
 		# second input
-		(0, 2, primitives.belt(RIGHT)),
+		(0, 2, belt(RIGHT)),
 		# third input
-		(0, 3, primitives.belt(RIGHT, 2)),
-		(2, 3, primitives.belt(UP)),
-		(2, 2, primitives.belt(LEFT)),
+		(0, 3, belt(RIGHT, 2)),
+		(2, 3, belt(UP)),
+		(2, 2, belt(LEFT)),
 		# 2 + 3
-		(1, 2, primitives.belt(UP)),
-		(1, 1, primitives.belt(RIGHT)),
-		(2, 1, primitives.belt(UP)),
-		(2, 0, primitives.belt(RIGHT, 2)),
+		(1, 2, belt(UP)),
+		(1, 1, belt(RIGHT)),
+		(2, 1, belt(UP)),
+		(2, 0, belt(RIGHT, 2)),
 		# output
-		(3, 6, primitives.belt(LEFT, 4)),
+		(3, 6, belt(LEFT, 4)),
 	),
 	# body: Alternate the two underground belt types so we can insert to/from both.
 	# Rebalance the output each step.
 	body_width=6,
-	body=lambda building: Layout('body',
+	body=lambda building, belt, splitter: Layout('body',
 		# assemblers
 		(0, 2, building),
 		(3, 2, building),
@@ -707,10 +704,10 @@ Processor('3x half -> full',
 		(0, 0, primitives.belt_to_ground(RIGHT)),
 		(5, 0, primitives.belt_from_ground(RIGHT)),
 		# output
-		(5, 6, primitives.belt(LEFT, 2)),
-		(3, 5, entity(E.splitter, LEFT, output_priority='right')),
-		(2, 5, primitives.belt(DOWN)),
-		(2, 6, primitives.belt(LEFT, 3)),
+		(5, 6, belt(LEFT, 2)),
+		(3, 5, splitter(LEFT, output_priority='right')),
+		(2, 5, belt(DOWN)),
+		(2, 6, belt(LEFT, 3)),
 	),
 	# note tail goes a bit wider than the last thing put down, so that there's enough beacons
 	tail_width=3,
@@ -744,7 +741,7 @@ Processor('oil cracking',
 	base_buildings=0,
 	per_body_buildings=2,
 	head_width=4,
-	head=Layout('head',
+	head=lambda building, belt, splitter: Layout('head',
 		# poles
 		(1, 2, primitives.medium_pole),
 		(1, 4, primitives.medium_pole),
@@ -762,7 +759,7 @@ Processor('oil cracking',
 		(0, 6, entity(E.underground_pipe, LEFT)),
 	),
 	body_width=9,
-	body=lambda building: Layout('body',
+	body=lambda building, belt, splitter: Layout('body',
 		# buildings and poles
 		(0, 2, building),
 		(3, 2, primitives.medium_pole),
@@ -823,7 +820,7 @@ Processor('2 fluids to belt',
 	base_buildings=0,
 	per_body_buildings=2,
 	head_width=4,
-	head=Layout('head',
+	head=lambda building, belt, splitter: Layout('head',
 		# Pole
 		(1, 4, primitives.medium_pole),
 		# First input, upper side
@@ -843,15 +840,15 @@ Processor('2 fluids to belt',
 		(3, 6, entity(E.pipe)),
 		# Output, upper side
 		(3, 0, primitives.belt_from_ground(LEFT)),
-		(2, 0, primitives.belt(DOWN)),
+		(2, 0, belt(DOWN)),
 		(2, 1, primitives.belt_to_ground(DOWN)),
 		(2, 5, primitives.belt_from_ground(DOWN)),
 		# lower side
 		(2, 6, primitives.belt_from_ground(LEFT)),
-		(1, 6, primitives.belt(LEFT, 2)),
+		(1, 6, belt(LEFT, 2)),
 	),
 	body_width=6,
-	body=lambda building: Layout('body',
+	body=lambda building, belt, splitter: Layout('body',
 		# buildings and poles
 		(0, 2, building),
 		(3, 2, building._replace(orientation=DOWN)),
@@ -904,7 +901,7 @@ Processor('1 liquid + 2 solids -> liquid',
 	inputs=(1, 2, 0),
 	outputs=(1, 0, 0),
 	head_width=4,
-	head=Layout('head',
+	head=lambda building, belt, splitter: Layout('head',
 		# single pole, connects to above and below poles.
 		# the head beacons are instead powered by the first body section.
 		(2, 3, primitives.medium_pole),
@@ -912,16 +909,16 @@ Processor('1 liquid + 2 solids -> liquid',
 		(0, 1, entity(E.underground_pipe, LEFT)),
 		(3, 1, entity(E.underground_pipe, RIGHT)),
 		# first belt input
-		(0, 2, primitives.belt(RIGHT)),
-		(1, 2, primitives.belt(UP, 2)),
-		(1, 0, primitives.belt(RIGHT)),
+		(0, 2, belt(RIGHT)),
+		(1, 2, belt(UP, 2)),
+		(1, 0, belt(RIGHT)),
 		(2, 0, primitives.belt_to_ground(RIGHT)),
 		# second belt input
-		(0, 3, primitives.belt(RIGHT)),
-		(1, 3, primitives.belt(DOWN)),
-		(1, 4, primitives.belt(RIGHT)),
-		(2, 4, primitives.belt(DOWN, 2)),
-		(2, 6, primitives.belt(RIGHT)),
+		(0, 3, belt(RIGHT)),
+		(1, 3, belt(DOWN)),
+		(1, 4, belt(RIGHT)),
+		(2, 4, belt(DOWN, 2)),
+		(2, 6, belt(RIGHT)),
 		(3, 6, primitives.belt_to_ground(RIGHT)),
 		# output
 		(3, 5, entity(E.underground_pipe, RIGHT)),
@@ -930,7 +927,7 @@ Processor('1 liquid + 2 solids -> liquid',
 	),
 	body_width=6,
 	per_body_buildings=2,
-	body=lambda building: Layout('body',
+	body=lambda building, belt, splitter: Layout('body',
 		# poles
 		(0, 0, primitives.medium_pole),
 		(0, 6, primitives.medium_pole),
@@ -944,13 +941,13 @@ Processor('1 liquid + 2 solids -> liquid',
 		(5, 1, entity(E.pipe)),
 		# first belt input
 		(1, 0, primitives.belt_from_ground(RIGHT)),
-		(2, 0, primitives.belt(RIGHT, 2)),
+		(2, 0, belt(RIGHT, 2)),
 		(2, 1, entity(E.ins, UP)),
 		(3, 1, entity(E.ins, UP)),
 		(4, 0, primitives.belt_to_ground(RIGHT)),
 		# second belt input
 		(1, 6, primitives.belt_from_ground(RIGHT)),
-		(2, 6, primitives.belt(RIGHT, 2)),
+		(2, 6, belt(RIGHT, 2)),
 		(2, 5, entity(E.ins, DOWN)),
 		(3, 5, entity(E.ins, DOWN)),
 		(4, 6, primitives.belt_to_ground(RIGHT)),
@@ -981,7 +978,7 @@ Processor('1 liquid + 2 solids -> solid',
 	inputs=(1, 0, 2),
 	outputs=(0, 1, 0),
 	head_width=4,
-	head=Layout('head',
+	head=lambda building, belt, splitter: Layout('head',
 		# single power pole connects to top and bottom, the head's beacons are powered
 		# by the first body section.
 		(1, 4, primitives.medium_pole),
@@ -989,21 +986,21 @@ Processor('1 liquid + 2 solids -> solid',
 		(0, 1, entity(E.underground_pipe, LEFT)),
 		(3, 1, entity(E.underground_pipe, RIGHT)),
 		# first belt input
-		(0, 2, primitives.belt(RIGHT)),
+		(0, 2, belt(RIGHT)),
 		# second belt input
-		(0, 3, primitives.belt(RIGHT, 2)),
-		(2, 3, primitives.belt(UP)),
-		(2, 2, primitives.belt(LEFT)),
+		(0, 3, belt(RIGHT, 2)),
+		(2, 3, belt(UP)),
+		(2, 2, belt(LEFT)),
 		# combined belt input
-		(1, 2, primitives.belt(UP, 2)),
-		(1, 0, primitives.belt(RIGHT)),
+		(1, 2, belt(UP, 2)),
+		(1, 0, belt(RIGHT)),
 		(2, 0, primitives.belt_to_ground(RIGHT)),
 		# output
-		(3, 6, primitives.belt(LEFT, 4)),
+		(3, 6, belt(LEFT, 4)),
 	),
 	body_width=6,
 	per_body_buildings=2,
-	body=lambda building: Layout('body',
+	body=lambda building, belt, splitter: Layout('body',
 		# poles
 		(0, 0, primitives.medium_pole),
 		(0, 5, primitives.medium_pole),
@@ -1017,16 +1014,16 @@ Processor('1 liquid + 2 solids -> solid',
 		(5, 1, entity(E.pipe)),
 		# belt input
 		(1, 0, primitives.belt_from_ground(RIGHT)),
-		(2, 0, primitives.belt(RIGHT, 2)),
+		(2, 0, belt(RIGHT, 2)),
 		(2, 1, entity(E.ins, UP)),
 		(3, 1, entity(E.ins, UP)),
 		(4, 0, primitives.belt_to_ground(RIGHT)),
 		# output
-		(5, 6, primitives.belt(LEFT, 2)),
+		(5, 6, belt(LEFT, 2)),
 		(4, 5, entity(E.ins, UP)),
-		(3, 5, entity(E.splitter, LEFT, output_priority='right')),
-		(2, 5, primitives.belt(DOWN)),
-		(2, 6, primitives.belt(LEFT, 3)),
+		(3, 5, splitter(LEFT, output_priority='right')),
+		(2, 5, belt(DOWN)),
+		(2, 6, belt(LEFT, 3)),
 		(1, 5, entity(E.ins, UP)),
 	),
 	tail_width=3,
@@ -1050,20 +1047,20 @@ Processor('assembler with liquid input',
 	inputs=(1, 1, 1),
 	outputs=(0, 0, 1),
 	head_width=4,
-	head=Layout('head',
+	head=lambda building, belt, splitter: Layout('head',
 		# poles
 		(2, 3, primitives.medium_pole),
 		# liquid input
 		(0, 1, primitives.pipe(UP, 2)),
 		(1, 0, entity(E.underground_pipe, LEFT)),
 		# first belt input
-		(0, 2, primitives.belt(RIGHT, 3)),
-		(3, 2, primitives.belt(UP, 2)),
-		(3, 0, primitives.belt(RIGHT)),
+		(0, 2, belt(RIGHT, 3)),
+		(3, 2, belt(UP, 2)),
+		(3, 0, belt(RIGHT)),
 		# second belt input
-		(0, 3, primitives.belt(RIGHT)),
-		(1, 3, primitives.belt(DOWN, 3)),
-		(1, 6, primitives.belt(RIGHT)),
+		(0, 3, belt(RIGHT)),
+		(1, 3, belt(DOWN, 3)),
+		(1, 6, belt(RIGHT)),
 		(2, 6, primitives.belt_to_ground(RIGHT, type='red')),
 		# output
 		(3, 6, primitives.belt_to_ground(LEFT)),
@@ -1071,7 +1068,7 @@ Processor('assembler with liquid input',
 	),
 	body_width=6,
 	per_body_buildings=2,
-	body=lambda building: Layout('body',
+	body=lambda building, belt, splitter: Layout('body',
 		# poles
 		(1, 0, primitives.medium_pole),
 		(1, 5, primitives.medium_pole),
@@ -1120,50 +1117,50 @@ Processor('6 input assembler',
 	inputs=(0, 0, 6),
 	outputs=(0, 0, 1),
 	head_width=5,
-	head=Layout('head',
+	head=lambda building, belt, splitter: Layout('head',
 		# poles
 		(2, 2, primitives.medium_pole),
 		(2, 5, primitives.medium_pole),
 		# first input
-		(0, 0, primitives.belt(RIGHT)),
-		(1, 0, primitives.belt(DOWN)),
+		(0, 0, belt(RIGHT)),
+		(1, 0, belt(DOWN)),
 		# second input
 		(0, 1, primitives.belt_to_ground(RIGHT)),
 		(3, 1, primitives.belt_from_ground(RIGHT)),
-		(4, 1, primitives.belt(DOWN)),
-		(4, 2, primitives.belt(RIGHT)),
+		(4, 1, belt(DOWN)),
+		(4, 2, belt(RIGHT)),
 		# third input
-		(0, 2, primitives.belt(RIGHT)),
-		(1, 2, primitives.belt(UP)),
+		(0, 2, belt(RIGHT)),
+		(1, 2, belt(UP)),
 		# 1+3 input
-		(1, 1, primitives.belt(RIGHT)),
-		(2, 1, primitives.belt(UP)),
-		(2, 0, primitives.belt(RIGHT, 3)),
+		(1, 1, belt(RIGHT)),
+		(2, 1, belt(UP)),
+		(2, 0, belt(RIGHT, 3)),
 		# fourth input
-		(0, 3, primitives.belt(RIGHT)),
-		(1, 3, primitives.belt(DOWN)),
+		(0, 3, belt(RIGHT)),
+		(1, 3, belt(DOWN)),
 		# fifth input
 		(0, 4, primitives.belt_to_ground(RIGHT)),
 		(4, 4, primitives.belt_from_ground(RIGHT)),
 		# sixth input (phew)
-		(0, 5, primitives.belt(RIGHT)),
-		(1, 5, primitives.belt(UP)),
+		(0, 5, belt(RIGHT)),
+		(1, 5, belt(UP)),
 		# 4+6 input
-		(1, 4, primitives.belt(RIGHT, 2)),
-		(3, 4, primitives.belt(UP)),
-		(3, 3, primitives.belt(RIGHT, 2)),
+		(1, 4, belt(RIGHT, 2)),
+		(3, 4, belt(UP)),
+		(3, 3, belt(RIGHT, 2)),
 		# output
-		(4, 6, primitives.belt(LEFT, 5)),
+		(4, 6, belt(LEFT, 5)),
 	),
 	body_width=6,
 	per_body_buildings=1,
-	body=lambda building: Layout('body',
+	body=lambda building, belt, splitter: Layout('body',
 		# poles and building
 		(1, 1, primitives.medium_pole),
 		(1, 5, primitives.medium_pole),
 		(2, 2, building),
 		# 1+3 input
-		(0, 0, primitives.belt(RIGHT, 6)),
+		(0, 0, belt(RIGHT, 6)),
 		(2, 1, entity(E.ins, UP)),
 		# 2 input
 		(0, 2, primitives.belt_to_ground(RIGHT)),
@@ -1178,7 +1175,7 @@ Processor('6 input assembler',
 		(1, 4, entity(E.ins, LEFT)),
 		(5, 4, primitives.belt_from_ground(RIGHT)),
 		# output
-		(5, 6, primitives.belt(LEFT, 6)),
+		(5, 6, belt(LEFT, 6)),
 		(2, 5, entity(E.ins, UP)),
 	),
 	tail_width=2,
@@ -1204,37 +1201,37 @@ Processor('lab',
 	inputs=(0, 0, 7),
 	outputs=(0, 0, 0),
 	head_width=4,
-	head=Layout('head',
+	head=lambda building, belt, splitter: Layout('head',
 		# pole
 		(1, 2, primitives.medium_pole),
 		# input 1
 		(0, 0, primitives.belt_to_ground(RIGHT, type='red')),
 		# input 2
-		(0, 1, primitives.belt(RIGHT)),
+		(0, 1, belt(RIGHT)),
 		# input 3
 		(0, 2, primitives.belt_to_ground(RIGHT)),
 		# input 4
-		(0, 3, primitives.belt(RIGHT, 2)),
-		(2, 3, primitives.belt(UP, 2)),
-		(2, 1, primitives.belt(LEFT)),
+		(0, 3, belt(RIGHT, 2)),
+		(2, 3, belt(UP, 2)),
+		(2, 1, belt(LEFT)),
 		# input 2+4
-		(1, 1, primitives.belt(UP)),
-		(1, 0, primitives.belt(RIGHT, 3)),
+		(1, 1, belt(UP)),
+		(1, 0, belt(RIGHT, 3)),
 		# input 5
-		(0, 4, primitives.belt(RIGHT, 2)),
-		(2, 4, primitives.belt(DOWN)),
-		(2, 5, primitives.belt(LEFT)),
+		(0, 4, belt(RIGHT, 2)),
+		(2, 4, belt(DOWN)),
+		(2, 5, belt(LEFT)),
 		# input 6
-		(0, 5, primitives.belt(RIGHT)),
+		(0, 5, belt(RIGHT)),
 		# input 5+6
-		(1, 5, primitives.belt(DOWN)),
-		(1, 6, primitives.belt(RIGHT, 3)),
+		(1, 5, belt(DOWN)),
+		(1, 6, belt(RIGHT, 3)),
 		# input 7
 		(0, 6, primitives.belt_to_ground(RIGHT, type='red')),
 	),
 	body_width=18,
 	per_body_buildings=4,
-	body=lambda building: Layout('body',
+	body=lambda building, belt, splitter: Layout('body',
 		# poles
 		(1, 1, primitives.medium_pole),
 		(7, 1, primitives.medium_pole),
@@ -1261,12 +1258,12 @@ Processor('lab',
 		# input 1
 		(2, 0, primitives.belt_from_ground(RIGHT, type='red')),
 		(2, 1, entity(E.ins, UP)),
-		(3, 0, primitives.belt(RIGHT, 3)),
+		(3, 0, belt(RIGHT, 3)),
 		(6, 0, primitives.belt_to_ground(RIGHT, type='red')),
 		(6, 1, entity(E.ins, UP)),
 		(11, 0, primitives.belt_from_ground(RIGHT, type='red')),
 		(11, 1, entity(E.ins, UP)),
-		(12, 0, primitives.belt(RIGHT, 3)),
+		(12, 0, belt(RIGHT, 3)),
 		(15, 0, primitives.belt_to_ground(RIGHT, type='red')),
 		(15, 1, entity(E.ins, UP)),
 		# input 5+6
@@ -1281,26 +1278,26 @@ Processor('lab',
 		# input 7
 		(2, 6, primitives.belt_from_ground(RIGHT, type='red')),
 		(2, 5, entity(E.ins, DOWN)),
-		(3, 6, primitives.belt(RIGHT, 3)),
+		(3, 6, belt(RIGHT, 3)),
 		(6, 6, primitives.belt_to_ground(RIGHT, type='red')),
 		(6, 5, entity(E.ins, DOWN)),
 		(11, 6, primitives.belt_from_ground(RIGHT, type='red')),
 		(11, 5, entity(E.ins, DOWN)),
-		(12, 6, primitives.belt(RIGHT, 3)),
+		(12, 6, belt(RIGHT, 3)),
 		(15, 6, primitives.belt_to_ground(RIGHT, type='red')),
 		(15, 5, entity(E.ins, DOWN)),
 		# input 3
 		(3, 2, primitives.belt_from_ground(RIGHT)),
-		(4, 2, primitives.belt(DOWN, 2)),
+		(4, 2, belt(DOWN, 2)),
 		(3, 3, entity(E.ins, RIGHT)),
 		(5, 3, entity(E.ins, LEFT)),
-		(4, 4, primitives.belt(RIGHT)),
+		(4, 4, belt(RIGHT)),
 		(5, 4, primitives.belt_to_ground(RIGHT)),
 		(12, 4, primitives.belt_from_ground(RIGHT)),
-		(13, 4, primitives.belt(UP, 2)),
+		(13, 4, belt(UP, 2)),
 		(12, 3, entity(E.ins, RIGHT)),
 		(14, 3, entity(E.ins, LEFT)),
-		(13, 2, primitives.belt(RIGHT)),
+		(13, 2, belt(RIGHT)),
 		(14, 2, primitives.belt_to_ground(RIGHT)),
 	),
 	tail_width=3,

@@ -469,7 +469,7 @@ def layout_process(belt_type, step):
 			return Layout("dummy processor"), 9, 0
 		# Otherwise let it raise
 		raise
-	return processor.layout(step)
+	return processor.layout(belt_type, step)
 
 
 def layout_roboport_row(bus, width):
