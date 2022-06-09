@@ -160,7 +160,7 @@ def belt(orientation, length=1, type='blue'):
 		'blue': E.belt,
 		'red': E.red_belt,
 		'yellow': E.yellow_belt,
-	}
+	}[type]
 	return Layout("belt", *[
 		(i * delta.x, i * delta.y, entity(e, orientation))
 		for i in range(length)
