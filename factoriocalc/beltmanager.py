@@ -29,7 +29,7 @@ Line = namedtuple('Line', [
 
 
 class BeltManager(object):
-	def __init__(self, steps, inputs):
+	def __init__(self, steps, inputs, belt_type='blue'):
 		"""
 		steps should be a list of Processes, split such that no input or output
 		exceeds a single line throughput limit.
@@ -40,6 +40,7 @@ class BeltManager(object):
 		self.pending = list(steps) # list of steps left to do
 		self.bus = [Line(input.item, input.throughput) for input in inputs] # list of Line objects
 		self.output = [] # list of Placement or Compaction
+		self.belt_type = belt_type
 
 	def run(self):
 		"""Sequence all steps until done"""
@@ -159,14 +160,14 @@ class BeltManager(object):
 				if (
 					line is not None
 					and line.item == source.item
-					and line.throughput < line_limit(line.item)
+					and line.throughput < line_limit(line.item, self.belt_type)
 				)
 			]
 			if candidates:
 				# Do a compaction.
 				# pick least loaded first, then rightmost
 				dest_pos, dest = min(candidates, key=lambda (i, line): (line.throughput, -i))
-				limit = line_limit(dest.item)
+				limit = line_limit(dest.item, self.belt_type)
 				if dest.throughput + source.throughput > limit:
 					new_source = source._replace(throughput = dest.throughput + source.throughput - limit)
 					assert new_source.throughput < limit

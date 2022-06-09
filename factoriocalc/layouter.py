@@ -184,7 +184,7 @@ def layout_step(belt_type, step):
 
 	layout.place(0, 0, layout_bus(belt_type, step, padding, process_base_x))
 	if isinstance(step, Placement):
-		process_layout, process_width, oversize = layout_process(step)
+		process_layout, process_width, oversize = layout_process(belt_type, step)
 		layout.place(process_base_x, 0, process_layout)
 		process_end = process_width + process_base_x
 	else:
@@ -398,7 +398,7 @@ def layout_compaction(belt_type, step):
 
 	# compactions
 	for left, right in step.compactions:
-		right_ends = step.bus[left].throughput + step.bus[right].throughput <= line_limit(step.bus[left].item)
+		right_ends = step.bus[left].throughput + step.bus[right].throughput <= line_limit(step.bus[left].item, belt_type)
 		liquid = is_liquid(step.bus[left].item)
 		pipe_or_belt = primitives.pipe if liquid else lambda o, l=1: primitives.belt(o, l, type=belt_type)
 		# right top part
@@ -440,7 +440,7 @@ def layout_compaction(belt_type, step):
 	return layout
 
 
-def layout_process(step):
+def layout_process(belt_type, step):
 	"""Choose the process primitives to use for this Placement and lay them out.
 	Returns:
 	* layout
@@ -452,7 +452,7 @@ def layout_process(step):
 		for item, throughput in in_or_out.items():
 			if is_liquid(item):
 				liquids += 1
-			elif throughput <= line_limit(item) / 2:
+			elif throughput <= line_limit(item, belt_type) / 2:
 				halfbelts += 1
 			else:
 				belts += 1

@@ -254,7 +254,7 @@ class Calculator(object):
 		return results
 
 
-def split_into_steps(processes, input_limit=None, input_liquid_limit=None):
+def split_into_steps(processes, input_limit=None, input_liquid_limit=None, belt_type='blue'):
 	"""Splits a dict of full processes into an unordered list of steps,
 	where each step uses no more than 1 belt for each input or output.
 	To prevent balance issues, all but the final step is maximised, ie.
@@ -270,7 +270,7 @@ def split_into_steps(processes, input_limit=None, input_liquid_limit=None):
 		elif input and not is_liquid(item) and input_limit is not None:
 			return input_limit
 		else:
-			return line_limit(item)
+			return line_limit(item, belt_type)
 
 	results = []
 	inputs = []

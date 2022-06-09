@@ -56,11 +56,17 @@ def is_liquid(item):
 	]
 	return item in LIQUIDS
 
-def line_limit(item):
+def line_limit(item, belt_type):
 	if is_liquid(item):
 		# 17/tick for pipe lengths up to 166 long. This is a conservative
 		# limit that just means I don't need to worry about it.
 		return Fraction(17*60)
-	return Fraction(45) # full blue belt
+	if belt_type == 'blue':
+		return Fraction(45)
+	if belt_type == 'red':
+		return Fraction(30)
+	if belt_type == 'yellow':
+		return Fraction(15)
+	raise ValueError("Bad belt type: {!r}".format(belt_type))
 
 UP, RIGHT, DOWN, LEFT = range(4)
