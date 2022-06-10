@@ -66,6 +66,7 @@ Steel plate takes 16 in furnace, 5 iron plate, can take productivity
 2 sulfur takes 1 in chemical plant, 30 petroleum, 30 water, can take productivity
 50 sulfuric acid takes 1 in chemical plant, 1 iron plate, 5 sulfur, 100 water, can take productivity
 10 fuel cell takes 10 in assembler, 10 iron plate, 1 U235, 19 U238
+Barrel takes 1 in assembler, 1 steel plate, can take productivity
 
 # Science packs
 1 red science takes 5 in assembler, 1 copper plate, 1 gear, can take productivity

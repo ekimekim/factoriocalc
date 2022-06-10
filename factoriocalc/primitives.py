@@ -44,6 +44,7 @@ class _Entities(object):
 	yellow_underground_belt = 'underground-belt'
 
 	# checked
+	barrel = 'empty-barrel'
 	red_science = 'automation-science-pack'
 	green_science = 'logistic-science-pack'
 	black_science = 'military-science-pack'
