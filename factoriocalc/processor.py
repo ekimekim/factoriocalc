@@ -525,6 +525,7 @@ Processor('2 + half -> half',
 # We then have half the outputs go to the top and bottom, so they combine to one full belt.
 # This means we need to balance the output red lines periodically. To make this work
 # requires a 4-assembler body pattern to alternate power poles and rebalancing.
+# Note also the left-side pole in the body which is needed in order to link up with the head.
 # In the diagram below, we use the normal indicators ∪⊂∩⊃ for underground belt,
 # but "crude" indicators ucnↄ for red underground belt.
 #   vↄ>|⊃c<sↄ⊂⊃ cↄ ⊂|
@@ -532,7 +533,7 @@ Processor('2 + half -> half',
 #  >vo |┌─┐┌─┐┌─┐┌─┐|
 #   >>v|│A││A││A││A│|
 #   nov|└─┘└─┘└─┘└─┘|
-#  v< v|i vSiiio ioi| o
+#  v< v|iovSiiio i i| o
 #  <^ↄ>|⊃c<sↄ⊂⊃c<<ↄ⊂|
 Processor('2 -> 1',
 	building='assembler',
@@ -546,8 +547,8 @@ Processor('2 -> 1',
 	head_width=4,
 	head=lambda building, belt, splitter: Layout('head',
 		# poles
-		(0, 0, primitives.medium_pole),
 		(2, 2, primitives.medium_pole),
+		(2, 4, primitives.medium_pole),
 		# first input
 		(0, 1, primitives.belt_to_ground(RIGHT)),
 		(2, 1, primitives.belt_from_ground(RIGHT)),
@@ -594,12 +595,12 @@ Processor('2 -> 1',
 		(11, 1, entity(E.ins, UP)),
 		# poles and inserters, bottom line
 		(0, 5, entity(E.ins, DOWN)),
+		(1, 5, primitives.medium_pole),
 		(4, 5, entity(E.ins, UP)),
 		(5, 5, entity(E.ins, DOWN)),
 		(6, 5, entity(E.ins, DOWN)),
 		(7, 5, primitives.medium_pole),
 		(9, 5, entity(E.ins, UP)),
-		(10, 5, primitives.medium_pole),
 		(11, 5, entity(E.ins, DOWN)),
 		# First input
 		(0, 0, primitives.belt_to_ground(RIGHT)),

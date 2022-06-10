@@ -66,6 +66,7 @@ class _Entities(object):
 	pipe = 'pipe'
 	pump = 'pump'
 	belt = 'express-transport-belt'
+	blue_belt = 'express-transport-belt'
 	red_belt = 'fast-transport-belt'
 	yellow_belt = 'transport-belt'
 	underground_belt = 'express-underground-belt'
@@ -323,7 +324,7 @@ def belt_to_left(type='blue'):
 #  =
 #  =
 #  =
-pipe_to_left = lambda: pipe(DOWN, 4)
+pipe_to_left = pipe(DOWN, 4)
 
 
 # Takes a belt from the left at bottom y slot and sends it down

@@ -43,10 +43,19 @@ class Layout(object):
 
 	def __str__(self):
 		"""Produces a long-form description suitable for debugging"""
-		return "{}: {}/{} entities{}".format(self.name, len(self.entities), self.total_entities(), ''.join(
-			"\n" + "\n".join("  {}".format(line) for line in str(sublayout).split('\n'))
-			for pos, sublayout in self.sublayouts
-		))
+		return "{}: {}/{} entities{}{}".format(
+			self.name,
+			len(self.entities),
+			self.total_entities(),
+			''.join(
+				"\n" + "\n".join("  {}".format(line) for line in str(sublayout).split('\n'))
+				for pos, sublayout in self.sublayouts
+			),
+			''.join(
+				"\n  {}".format(entity)
+				for pos, entity in self.entities
+			),
+		)
 
 
 def is_liquid(item):
