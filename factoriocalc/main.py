@@ -58,7 +58,7 @@ def main(items,
 		beacon_module_name = beacon_module.name
 	else:
 		# no beacons
-		beacon_speed = 1
+		beacon_speed = 0
 		beacon_module_name = None
 	calculator = Calculator(
 		datafile,
