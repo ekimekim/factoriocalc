@@ -111,6 +111,7 @@ class ArtEncoder(object):
 			2: [['p'], ['P']],
 			3: [['P', 'p']],
 		}[obj.orientation]),
+		E.constant_combinator: purple([['⌑']]),
 	}
 
 	def __init__(self, error_on_conflict=True):

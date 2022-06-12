@@ -37,6 +37,7 @@ def main(items,
 	belt_type='blue',
 	show_conflicts=False,
 	verbose=0,
+	input_guide=False,
 ):
 	def v(n, s):
 		if verbose >= n:
@@ -104,7 +105,7 @@ def main(items,
 	v(1, "Final Bus: {}".format(format_bus(manager.bus)))
 
 	v(3, "=== Layouter stage ===")
-	l = layout(belt_type, beacon_module_name, manager.output, manager.bus)
+	l = layout(belt_type, beacon_module_name, manager.output, manager.bus, input_guide=input_guide)
 	v(3, l)
 
 	v(3, "=== Flattener stage ===")

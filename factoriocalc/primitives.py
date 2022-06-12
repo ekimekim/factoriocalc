@@ -37,6 +37,24 @@ def circuit(rel_x, rel_y, color='green', port=1, target_port=1):
 	"""helper method for setting Entity connections, eg. Entity(E.chest, connections=[circuit(0, 1)])"""
 	return port, color, rel_x, rel_y, target_port
 
+def constant(**values):
+	"""Helper for creating a Constant Combinator with given settings.
+	Mostly expected to be used as a label."""
+	return Entity(E.constant_combinator, UP, [], {
+		"control_behavior": {
+			"filters": [
+				{
+					"index": i + 1,
+					"count": value,
+					"signal": {
+						"type": "item",
+						"name": E[item],
+					}
+				} for i, (item, value) in enumerate(values.items())
+			],
+		},
+	})
+
 
 # A mapping from easy internal names to official names
 class _Entities(object):
@@ -98,6 +116,7 @@ class _Entities(object):
 	green_circuit = 'electronic-circuit'
 	red_circuit = 'advanced-circuit'
 	rocket_silo = 'rocket-silo',
+	constant_combinator = 'constant-combinator'
 	# not entities but still a recipe name
 	oil_products = 'advanced-oil-processing'
 

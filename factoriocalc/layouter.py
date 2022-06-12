@@ -80,12 +80,14 @@ from .util import is_liquid, UP, RIGHT, DOWN, LEFT, Layout, line_limit
 BUS_START_X = 4
 
 
-def layout(belt_type, beacon_module, steps, final_bus):
+def layout(belt_type, beacon_module, steps, final_bus, input_guide=False):
 	"""Converts a list of Placements and Compactions into
 		a collection of Primitives.
 	belt_type must be 'blue', 'red', or 'yellow'. Even when not 'blue', blue underground
 		belts are used for distance.
 	beacon_module may be None to indicate no beacons. Gaps where they would go will be left.
+	If input_guide is true, adds constant combinators at the head of every input line
+		to show what item (and in what amount/sec, rounded up) is expected there.
 	"""
 	# Our main concerns in this top-level function are intra-row details:
 	# * Beacon widths (needs to cover the extremes of above and below rows)
@@ -104,6 +106,16 @@ def layout(belt_type, beacon_module, steps, final_bus):
 	height_since_roboports += 1 # ensure top beacon row is included in first roboport section
 	max_width = 0
 	oversize = 0
+
+	# Before the first row, add combinators as a guide to indicate expected inputs
+	if input_guide and steps:
+		guide = Layout('input guide')
+		step = steps[0]
+		for bus_pos, line in enumerate(step.bus):
+			bus_x = BUS_START_X + 2 * bus_pos
+			guide.place(bus_x, 0, primitives.constant(**{line.item: int(math.ceil(line.throughput))}))
+		layout.place(0, 0, guide)
+
 	for step in steps:
 		# If previous step was oversize, extend the bus to compensate.
 		if oversize:
