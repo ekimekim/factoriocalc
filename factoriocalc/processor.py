@@ -1354,12 +1354,44 @@ Processor('rocket silo',
 	outputs=(0, 0, 1),
 	oversize=4,
 	head_width=4,
-	head=Layout('head',
-		# TODO
+	head=lambda building, belt, splitter: Layout('head',
+		# poles
+		(2, 1, primitives.medium_pole),
+		(2, 9, primitives.medium_pole),
+		# second input merges into first
+		(0, 2, belt(RIGHT)),
+		(1, 2, belt(UP)),
+		(1, 1, belt(LEFT)),
+		# first/second input
+		(0, 1, belt(UP)),
+		(0, 0, belt(RIGHT, 4)),
+		# third input
+		(0, 3, belt(RIGHT)),
+		(1, 3, belt(DOWN)),
+		(1, 4, primitives.belt_to_ground(DOWN)),
+		(1, 9, primitives.belt_from_ground(DOWN)),
+		(1, 10, belt(RIGHT, 3)),
+		# fourth input (satellite)
+		(0, 4, belt(DOWN)),
+		(0, 5, belt(RIGHT)),
+		(1, 5, belt(DOWN)),
+		(1, 6, belt(RIGHT, 3)),
+		# output
+		(3, 3, primitives.belt_from_ground(LEFT)),
+		(2, 3, belt(DOWN)),
+		(2, 4, primitives.belt_to_ground(DOWN)),
+		(2, 7, primitives.belt_from_ground(DOWN)),
+		(2, 8, belt(LEFT, 2)),
+		(0, 8, belt(UP, 2)),
+		(0, 6, belt(LEFT)),
 	),
 	body_width=21, # ouch
 	per_body_buildings=1,
-	body=Layout('body',
-		# TODO
+	body=lambda building, belt, splitter: Layout('body',
+		# poles and silo
+		# first/second input
+		# third input
+		# fourth input (satellite)
+		# output
 	),
 )

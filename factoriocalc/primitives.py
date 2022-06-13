@@ -3,7 +3,7 @@
 
 from collections import namedtuple
 
-from .util import Layout, Point, UP, RIGHT, DOWN, LEFT
+from .util import Layout, Point, UP, RIGHT, DOWN, LEFT, is_liquid
 
 
 def orientation_to_vector(orientation):
@@ -47,7 +47,7 @@ def constant(**values):
 					"index": i + 1,
 					"count": value,
 					"signal": {
-						"type": "item",
+						"type": "fluid" if is_liquid(item) else "item",
 						"name": E[item],
 					}
 				} for i, (item, value) in enumerate(values.items())
