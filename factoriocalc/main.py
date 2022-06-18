@@ -38,6 +38,7 @@ def main(items,
 	show_conflicts=False,
 	verbose=0,
 	input_guide=False,
+	no_oil=False,
 ):
 	def v(n, s):
 		if verbose >= n:
@@ -70,7 +71,10 @@ def main(items,
 	)
 
 	v(2, "=== Calculator stage ===")
-	processes = calculator.solve_with_oil(items)
+	if no_oil:
+		processes = calculator.solve_all(items)
+	else:
+		processes = calculator.solve_with_oil(items)
 	for name, process in processes.items():
 		v(2, "{}: {}".format(name, process))
 
