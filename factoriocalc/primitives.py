@@ -115,7 +115,7 @@ class _Entities(object):
 	copper_wire = 'copper-cable'
 	green_circuit = 'electronic-circuit'
 	red_circuit = 'advanced-circuit'
-	rocket_silo = 'rocket-silo',
+	rocket_silo = 'rocket-silo'
 	constant_combinator = 'constant-combinator'
 	# not entities but still a recipe name
 	oil_products = 'advanced-oil-processing'

@@ -1323,7 +1323,7 @@ Processor('lab',
 # The relevant (long-handed) inserter is marked as I instead of i.
 # We also use the normal indicators ∪⊂∩⊃ for underground belt,
 # but "crude" indicators ucnↄ for red underground belt.
-# >>>>|s>>ↄ>⊃ cↄ⊂⊃cↄ  ⊂vc>>>|
+# >>>>|s>>⊃>c ⊂⊃cↄ⊂⊃  cv⊂>>>|
 # ^<o |sv>ↄ∪v⊃cↄo cↄ ⊂<∪cv  |
 # >^  | ∪^ov<┌───────┐^o v  |
 # >vv⊃|  ^⊂< │       │^⊃ v  |
@@ -1389,9 +1389,83 @@ Processor('rocket silo',
 	per_body_buildings=1,
 	body=lambda building, belt, splitter: Layout('body',
 		# poles and silo
+		(6, 2, building),
+		(3, 2, primitives.medium_pole),
+		(9, 1, primitives.medium_pole),
+		(16, 2, primitives.medium_pole),
+		(3, 5, primitives.medium_pole),
+		(5, 10, primitives.medium_pole),
 		# first/second input
+		(0, 0, splitter(RIGHT)),
+		(1, 1, belt(DOWN)),
+		(1, 2, primitives.belt_to_ground(DOWN)),
+		(1, 7, primitives.belt_from_ground(DOWN)),
+		(1, 8, belt(RIGHT, 4)),
+		(5, 8, entity(E.ins, LEFT)),
+		(1, 0, belt(RIGHT, 2)), # back to the splitter
+		(3, 0, primitives.belt_to_ground(RIGHT)),
+		(7, 0, primitives.belt_from_ground(RIGHT)),
+		(8, 0, primitives.belt_to_ground(RIGHT)),
+		(11, 0, primitives.belt_from_ground(RIGHT)),
+		(12, 0, primitives.belt_to_ground(RIGHT)),
+		(17, 0, primitives.belt_from_ground(RIGHT)),
+		(18, 0, belt(RIGHT, 3)),
 		# third input
+		(0, 10, belt(RIGHT, 4)),
+		(4, 10, belt(UP)),
+		(4, 9, primitives.belt_to_ground(UP)),
+		(4, 1, primitives.belt_from_ground(UP)),
+		(4, 0, belt(RIGHT)),
+		(5, 0, primitives.belt_to_ground(RIGHT, type='red')),
+		(9, 0, primitives.belt_from_ground(RIGHT, type='red')),
+		(10, 0, primitives.belt_to_ground(RIGHT, type='red')),
+		(15, 0, primitives.belt_from_ground(RIGHT, type='red')),
+		(16, 0, belt(DOWN)),
+		(16, 1, primitives.belt_to_ground(DOWN)),
+		(16, 7, primitives.belt_from_ground(DOWN)),
+		(16, 8, belt(DOWN, 2)),
+		(16, 10, belt(RIGHT, 5)),
 		# fourth input (satellite)
+		(0, 6, belt(RIGHT, 2)),
+		(2, 6, belt(UP, 5)), # inserter takes from here, but we'll do it later
+		(2, 1, belt(RIGHT)),
+		(3, 1, primitives.belt_to_ground(RIGHT, type='red')),
+		(7, 1, primitives.belt_from_ground(RIGHT, type='red')),
+		(8, 1, primitives.belt_to_ground(RIGHT, type='red')),
+		(11, 1, primitives.belt_from_ground(RIGHT, type='red')),
+		(12, 1, primitives.belt_to_ground(RIGHT, type='red')),
+		(17, 1, primitives.belt_from_ground(RIGHT, type='red')),
+		(18, 1, belt(DOWN, 5)),
+		(18, 6, belt(RIGHT, 3)),
+		# satellite inserter, connected to white science output box.
+		# only inserts if there is room in the output box.
+		(4, 6, entity(
+			E.long_inserter, LEFT,
+			connections=[primitives.circuit(0, -1)],
+			control_behavior={
+				"circuit_condition": {
+					"comparator": "<",
+					"constant": 1000,
+					"first_signal": {
+						"type": "item",
+						"name": "space-science-pack",
+					},
+				},
+			},
+		)),
 		# output
+		(16, 3, primitives.belt_from_ground(LEFT)),
+		(15, 3, belt(UP, 2)),
+		(15, 1, belt(LEFT)),
+		(14, 1, primitives.belt_to_ground(LEFT)),
+		(6, 1, primitives.belt_from_ground(LEFT)),
+		(5, 1, belt(DOWN)),
+		(5, 2, belt(LEFT)),
+		(4, 2, belt(DOWN)),
+		(4, 3, belt(LEFT)), # inserter outputs here
+		(3, 3, primitives.belt_to_ground(LEFT)),
+		(5, 5, entity(E.ins, RIGHT)), # silo to box
+		(4, 5, entity(E.chest)),
+		(4, 4, entity(E.ins, DOWN)), # box to belt
 	),
 )
