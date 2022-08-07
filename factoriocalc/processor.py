@@ -196,6 +196,9 @@ class Processor(object):
 		# furnaces are a special case that don't need a recipe set
 		if recipe.building.name != 'furnace':
 			attrs['recipe'] = E[recipe.name]
+		# rocket silos need auto-launch set
+		if recipe.building.name == "rocket-silo":
+			attrs['auto_launch'] = True
 		if recipe.mods:
 			attrs['items'] = {
 				E[mod]: count for mod, count in Counter(recipe.mods).items()
@@ -1330,24 +1333,11 @@ Processor('lab',
 # v∪∪ |  ^ i │       │   v  |
 # >v  |  ^o☐i│       │   v  |
 # <>>>|>>^ I │   S   │   >>>|
-# ^ ∩ | ∩    │       │ ∩    |
-# ^<< | >>>>i│       │iv    |
-#  ∩o |    ∩ │       │iv    |
+# ^ ∩ | ∩  ^i│       │ ∩    |
+# ^<< | >>>^i│       │iv    |
+#  ∩o |    ∩ │       │ v    |
 #  >>>|>>>>^o└───────┘o>>>>>|
-# TODO 0/0/4 -> 0/0/1
-# recipe name in silo is "rocket-part"
-# box and inserter should be connected with a circuit (default color/ports is fine)
-# inserter should also have attr:
-# "control_behavior": {
-#  "circuit_condition": {
-#   "constant": 1000, 
-#   "first_signal": {
-#    "type": "item", 
-#    "name": "space-science-pack"
-#   }, 
-#   "comparator": "<"
-#  }
-# }, 
+# TODO silo needs "auto launch with cargo" checked
 Processor('rocket silo',
 	building='rocket silo',
 	inputs=(0, 0, 4),
@@ -1395,13 +1385,16 @@ Processor('rocket silo',
 		(16, 2, primitives.medium_pole),
 		(3, 5, primitives.medium_pole),
 		(5, 10, primitives.medium_pole),
+		(15, 10, primitives.medium_pole),
 		# first/second input
 		(0, 0, splitter(RIGHT)),
 		(1, 1, belt(DOWN)),
 		(1, 2, primitives.belt_to_ground(DOWN)),
 		(1, 7, primitives.belt_from_ground(DOWN)),
-		(1, 8, belt(RIGHT, 4)),
+		(1, 8, belt(RIGHT, 3)),
+		(4, 8, belt(UP, 2)),
 		(5, 8, entity(E.ins, LEFT)),
+		(5, 7, entity(E.ins, LEFT)),
 		(1, 0, belt(RIGHT, 2)), # back to the splitter
 		(3, 0, primitives.belt_to_ground(RIGHT)),
 		(7, 0, primitives.belt_from_ground(RIGHT)),
@@ -1423,6 +1416,7 @@ Processor('rocket silo',
 		(16, 0, belt(DOWN)),
 		(16, 1, primitives.belt_to_ground(DOWN)),
 		(16, 7, primitives.belt_from_ground(DOWN)),
+		(15, 7, entity(E.ins, RIGHT)),
 		(16, 8, belt(DOWN, 2)),
 		(16, 10, belt(RIGHT, 5)),
 		# fourth input (satellite)
